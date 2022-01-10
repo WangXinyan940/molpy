@@ -86,10 +86,10 @@ class LAMMPSIO:
         atom_styles = {'full': ['id', 'mol', 'type', 'q', 'x', 'y', 'z'], 'molecular': ['id', 'mol', 'type', 'x', 'y', 'z']}
         if isinstance(atom_style, str):
             fields = atom_styles[atom_style]
-            formats = [formats[field] for field in fields]
+            formats = [formats[field] if field in formats else float for field in fields]
         
         elif fields:
-            formats = [formats[field] for field in fields]
+            formats = [formats[field] if field in formats else float for field in fields]
         
         else:
             raise ValueError    

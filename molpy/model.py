@@ -7,31 +7,43 @@
 
 import numpy as np
 
-class ModelMetaclass(type):
+class Model:
     
-    def __new__(cls, name, bases, attrs):
-        if name == 'Model':
-            return type.__new__(cls, name, bases, attrs)
-        print('Found model: %s' % name)
-        fields = dict()
-        for k, v in attrs.items():
-            if isinstance(v, np.ndarray):
-                print('Found mapping: %s ==> %s' % (k, v))
-                fields[k] = v
-        for k in fields.keys():
-            attrs.pop(k)
-        attrs['__fields__'] = fields
-        attrs['__modelType__'] = name
-        return type.__new__(cls, name, bases, attrs)
+    def __init__(self):
+        super().__setattr__('_fields', {})
+        
+    def __getattr__(self, field):
+        return self._fields[field]
     
-class Model(metaclass=ModelMetaclass):
+    def __setattr__(self, field, value):
+        
+        if field in self._fields:
+            # TODO: validation
+            self._fields = value
+        else:
+            super().__setattr__(field, value)
     
-    def __init__(self, **fields) -> None:
-        print(fields)
+    @property    
+    def dtype(self):
+        tmp = []
+        for k, v in self._fields.items():
+            if v.ndim == 1:
+                tmp.append( (k, v.dtype) ) 
+            else:
+                tmp.append( (k, v.dtype, v.shape[1:]) )
+                
+        return tmp
+    
+    @property
+    def fields(self):
+        return self._fields
+    
+    def mergeFields(self, fields, newField, dtype):
         pass
     
-class Molecule(Model):
-    pass
+    def dropFields(self, fields):
+        pass
     
-m = Molecule(id=np.array([1,2,3]), position=np.arange(9).reshape((3,3)))
-print(m)
+    def appendField(self, field, value):
+        pass
+    
