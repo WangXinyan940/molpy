@@ -45,12 +45,17 @@ class Atoms(Model):
         """
         mask = func(self.data)
         newAtoms = self.data[mask]
-        atoms = Atoms(copy=newAtoms)
+        atoms = Atoms(natoms=len(newAtoms), copy=newAtoms)
         return atoms
     
-    def selectByExpr(self, expression, copy=False):
+    def groupby(self, field):
         
-        return Atoms(copy=self.data[exec(expression)])
+        a = self.data[self.data[field].argsort()]
+        groups = np.split(a, np.unique(a[field], return_index=True)[1][1:])
+        atoms = []
+        for group in groups:
+            atoms.append(Atoms(natoms=len(group), copy=group))
+        return atoms
         
     def loadTraj(self, traj):
         

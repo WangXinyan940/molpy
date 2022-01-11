@@ -32,11 +32,14 @@ class Model:
             else:
                 tmp.append( (k, v.dtype, v.shape[1:]) )
                 
-        return tmp
+        return np.dtype(tmp)
     
     @property
     def fields(self):
         return self._fields
+    
+    def __contains__(self, o):
+        return o in self._fields.keys()
     
     def mergeFields(self, fields, newField, dtype):
         pass
@@ -44,6 +47,33 @@ class Model:
     def dropFields(self, fields):
         pass
     
-    def appendField(self, field, value):
-        pass
-    
+    def appendFields(self, fields:dict):
+        # TODO: validation
+        self._fields.update(fields)
+            
+    def __getiems__(self, o):
+        
+        if isinstance(o, str):
+            return self._fields[o]
+        
+    def groupby(self, field):
+        
+        tmp = self._fields[field].argsort()
+        index = np.unique(self._fields[field], return_index=True)[1][1:]
+        
+        grouped_fields = {}
+        
+        for k, v in self._fields.items():
+            grouped_fields[k] = np.split(tmp, index)
+        
+        models = []
+        for i in range(len(index)+1):
+            m = Model()
+            group_fields = {}
+            for k, v in grouped_fields.items():
+                group_fields[k] = v[i]
+            m.appendFields(group_fields)
+            models.append(m)
+        return models
+            
+        

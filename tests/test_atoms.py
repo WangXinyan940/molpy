@@ -13,7 +13,7 @@ class TestAtoms:
     
     @pytest.fixture(name='atoms')
     def test_init(self):
-        atoms = Atoms(5, [('id', int), ('position', float, (3, ))], group=[1,2,3,4,5], vel=np.random.random((5, 3)))
+        atoms = Atoms(5, [('id', int), ('position', float, (3, ))], group=[1, 0, 2, 1, 0], vel=np.random.random((5, 3)))
         assert len(atoms.getAtomInstances()) == 5
         yield atoms
         
@@ -26,6 +26,10 @@ class TestAtoms:
         atoms.data['id'] = np.arange(5)
         assert atoms.data[-1]['id'] == 4
         assert atomList[-1].data['id'] == 4
+        
+    def test_group_by(self, atoms):
+        groups = atoms.groupby('group')
+        assert len(groups) == 3
         
 class TestAtomsSelections:
     
@@ -42,14 +46,10 @@ class TestAtomsSelections:
         def func(data):
             return data['molid'] == 3
         
-        newAtoms = atoms.selectByFunc(func, copy=False)
-        npt.assert_equal(newAtoms['id'], [3,4])
-        opos = newAtoms['position']
+        newAtoms = atoms.selectByFunc(func)
+        npt.assert_equal(newAtoms.id, [3,4])
+        opos = newAtoms.position
         atoms.position = np.random.random((5, 3))
-        npt.assert_equal(newAtoms['position'], opos)
+        npt.assert_equal(newAtoms.position, opos)
         
-    def test_select_by_expr(self, atoms):
-        
-        newAtoms = atoms.selectByExpr('id == 3')
-        npt.assert_equal(newAtoms['id'], [3,4])
         

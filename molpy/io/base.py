@@ -20,8 +20,9 @@ class IOMetaClass(type):
         
 class ReaderBase(metaclass=IOMetaClass):
     
-    def __init__(self, filename):
+    def __init__(self, filename, **kwargs):
         self.filename = filename
+        self.kwargs = kwargs
     
     def parse(self, ):
         raise NotImplementedError("Override this in each subclass")

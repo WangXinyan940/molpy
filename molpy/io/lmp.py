@@ -134,11 +134,12 @@ class DataReader(ReaderBase, LAMMPSIO):
         
         return header, sections
  
-    def parse(self, atom_style, fields=None, formats=None):
+    def parse(self, fields=None, formats=None):
         """Parses a LAMMPS_ DATA file.
         """
         # Can pass atom_style to help parsing
-        fields, formats = self._interpret_atom_style(atom_style)
+        if 'atom_style' in self.kwargs:
+            fields, formats = self._interpret_atom_style(self.kwargs['atom_style'])
 
         header, sections = self.pre_parse()
         

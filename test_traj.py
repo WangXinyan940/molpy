@@ -14,8 +14,8 @@ import numpy as np
 system_name = 'io_40_125_pe_10_20'
 jname = f'tests/samples/mode1/{system_name}/{system_name}'
 
-dataReader = DataReader(f'{jname}.data')
-dataReader.parse('full')
+dataReader = DataReader(f'{jname}.data', atom_style='full')
+dataReader.parse()
 dumpReader = DumpReader(f'{jname}.dump')
 dumpReader.pre_parse()
 atomData = dataReader.atoms
@@ -66,4 +66,3 @@ rdfCalculator.compute((box, allPos), reset=False)
 
 clusterCalculator = cluster.Cluster()
 clusterCalculator.compute((box, allPos), neighbors=dict(r_max=1.5))
-print(clusterCalculator.num_clusters)
