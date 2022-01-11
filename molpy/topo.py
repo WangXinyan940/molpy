@@ -10,7 +10,10 @@ from .dihedral import Dihedrals
 
 class Topo:
     
-    def __init__(self, atoms):
+    def __init__(self):
+        pass
+    
+    def setAtomsData(self, atoms):
         self._atoms = atoms
         
     @property

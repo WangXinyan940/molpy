@@ -23,6 +23,14 @@ class Model:
             self._fields[field] = value
         else:
             super().__setattr__(field, value)
+            
+    def check_alignment(self):
+        field_lengths = list(map(len, self._fields.values()))
+        anyLength = field_lengths[np.random.randint(len(field_lengths))]
+        for l in field_lengths:
+            if l != anyLength:
+                return False
+        return True
     
     @property    
     def dtype(self):

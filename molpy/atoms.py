@@ -4,20 +4,21 @@
 # version: 0.0.2
 
 from .topo import Topo
-from .base import Model
+from .model import Model
 from .atom import Atom
 import numpy as np
 from numpy.lib import recfunctions as rfn
         
 class Atoms(Model):
     
-    def __init__(self, natoms, fields=None, copy=None, **data):
-        super().__init__(natoms, fields, copy, **data)
-        self._topo = Topo(self.data)
+    def __init__(self, n):
+        super().__init__(n)
+        self._topo = Topo()
+        self._topo.setAtomsData(self)
     
     @property
     def natoms(self):
-        return self._size
+        return self._n
     
     @property
     def atomInstances(self):
