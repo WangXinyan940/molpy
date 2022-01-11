@@ -22,7 +22,7 @@ class TestModel:
         mol = np.array([0, 1, 1, 2, 2, 2, 3, 3, 3])
         position = np.random.random((natom, 3))
         
-        m = Model()
+        m = Model(natom)
         m.appendFields(dict(id=id, mol=mol, position=position))
         yield m
         

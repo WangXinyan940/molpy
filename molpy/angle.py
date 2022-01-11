@@ -17,7 +17,7 @@ class Angle:
 
 class Angles:
     
-    def __init__(self, angles, atoms):
+    def __init__(self, angles, atoms=None):
         
         self.angles = Angles.unique(angles)
         self.atoms = atoms
@@ -39,12 +39,10 @@ class Angles:
         
         if self.atoms is None:
             raise ValueError(f'need atoms to generate Angle instances')
-        
-        tmp = shallowCopyArray(self.atoms)
-
-        itoms = map(lambda copy: Atom(copy=copy), tmp[self.angles[:, 0]])
-        jtoms = map(lambda copy: Atom(copy=copy), tmp[self.angles[:, 1]])
-        ktoms = map(lambda copy: Atom(copy=copy), tmp[self.angles[:, 2]])
+    
+        itoms = self.atoms[self.angles[:, 0]]
+        jtoms = self.atoms[self.angles[:, 1]]
+        ktoms = self.atoms[self.angles[:, 2]]
         
         angles = [Angle(itom, jtom, ktom) for itom, jtom, ktom in zip(itoms, jtoms, ktoms)]      
         return angles  

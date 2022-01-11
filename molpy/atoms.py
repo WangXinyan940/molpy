@@ -11,10 +11,17 @@ from numpy.lib import recfunctions as rfn
         
 class Atoms(Model):
     
-    def __init__(self, n):
-        super().__init__(n)
+    def __init__(self, natoms=None, data:dict=None, fromAtoms=None):
+        super().__init__(natoms)
         self._topo = Topo()
-        self._topo.setAtomsData(self)
+        if data is not None:
+            self._fields.update(data)
+        if fromAtoms is not None:
+            if isinstance(fromAtoms, Atoms):
+                self._fields = fromAtoms._fields
+            elif isinstance(fromAtoms, np.ndarray):
+                for name in fromAtoms.dtype.names:
+                    self._fields[name] = fromAtoms[name]
     
     @property
     def natoms(self):
@@ -24,16 +31,17 @@ class Atoms(Model):
     def atomInstances(self):
         return self.getAtoms()
     
-    def getAtoms(self):
-        return self.data
-    
     def __len__(self):
-        return self._size
+        return self._n
     
     def getAtomInstances(self):
         
-        return [Atom(copy=copy) for copy in self.data]
-        # return [copy for copy in self.data]
+        struc = self.toStructuredArray()
+        atomList = np.zeros_like(struc, dtype=object)
+        for i in range(len(struc)):
+            atomList[i] = Atom(fromAtom=struc[i])
+        return atomList
+
 
     def selectByFunc(self, func):
         """return selected atoms by the function. 
@@ -44,52 +52,32 @@ class Atoms(Model):
         Returns:
             Atoms: subset of atoms
         """
-        mask = func(self.data)
-        newAtoms = self.data[mask]
-        atoms = Atoms(natoms=len(newAtoms), copy=newAtoms)
+        struc = self.toStructuredArray()
+        mask = func(struc)
+        newAtoms = struc[mask]
+        atoms = Atoms(natoms=len(mask), fromAtoms=newAtoms)
         return atoms
     
     def groupby(self, field):
         
-        a = self.data[self.data[field].argsort()]
+        struc = self.toStructuredArray()
+        a = struc[struc[field].argsort()]
         groups = np.split(a, np.unique(a[field], return_index=True)[1][1:])
         atoms = []
         for group in groups:
-            atoms.append(Atoms(natoms=len(group), copy=group))
+            atoms.append(Atoms(natoms=len(group), fromAtoms=group))
         return atoms
         
     def loadTraj(self, traj):
         
         self._traj = traj
-        
-    def getFrame(self, frame):
-        
-        atomArr = self._traj.parse(frame)
-        for name in atomArr.dtype.names:
-            self.data[name] = atomArr[name]
 
     @property
     def positions(self):
-        if 'position' in self.data.dtype.names:
+        if 'position' in self._fields:
             return self.data['position']
-        else:
-            return np.hstack([self.data['x'].reshape((self.natoms, 1)), self.data['y'].reshape((self.natoms, 1)), self.data['z'].reshape((self.natoms, 1))])
-
-    def mergeAtoms(self, atoms):
-        """merge anthoer atoms to this one
-
-        Args:
-            atoms ([type]): [description]
-        """
-        # untest
-        self.data = rfn.merge_arrays([self.data, atoms.data])
-        
-    def mergeFields(self, newdtype):
-        
-        self._data = rfn.unstructured_to_structured(rfn.structured_to_unstructured(self.data), newdtype)
-        
-    def dropFields(self, fields):
-        self._data = rfn.drop_fields(self._data, fields)
+        elif 'x' in self._fields and 'y' in self._fields and 'z' in self._fields:
+            return self.mergeFields(['x', 'y', 'z'], 'position')
         
     def calcRadiusOfGyration(self):
         

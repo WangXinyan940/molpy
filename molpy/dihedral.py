@@ -5,7 +5,7 @@
 
 import numpy as np
 from molpy.atom import Atom
-from molpy.utils import shallowCopyArray
+
 
 class Dihedral:
     
@@ -36,12 +36,10 @@ class Dihedrals:
         if self.atoms is None:
             raise ValueError(f'need atoms to generate Angle instances')
         
-        tmp = shallowCopyArray(self.atoms)
-
-        itoms = map(lambda copy: Atom(copy=copy), tmp[self.dihedrals[:, 0]])
-        jtoms = map(lambda copy: Atom(copy=copy), tmp[self.dihedrals[:, 1]])
-        ktoms = map(lambda copy: Atom(copy=copy), tmp[self.dihedrals[:, 2]])
-        ltoms = map(lambda copy: Atom(copy=copy), tmp[self.dihedrals[:, 2]])
+        itoms = self.atoms[self.angles[:, 0]]
+        jtoms = self.atoms[self.angles[:, 1]]
+        ktoms = self.atoms[self.angles[:, 2]]
+        ltoms = self.atoms[self.angles[:, 3]]
         
         dihes = [Dihedrals(itom, jtom, ktom, ltom) for itom, jtom, ktom, ltom in zip(itoms, jtoms, ktoms, ltoms)]
         return dihes

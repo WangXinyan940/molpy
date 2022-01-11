@@ -34,16 +34,16 @@ class TestTopoWithoutAtom:
 class TestTopoWithAtom:
     
     @pytest.fixture(scope='class', name='atoms')
-    def init_data(self):
-        
-        atoms = Atoms(5, [('id', int), ('position', float, (3, ))], group=[1,2,3,4,5], vel=np.random.random((5, 3)))
-        
+    def test_init_atoms(self):
+        atoms = Atoms(5, dict(id=np.arange(5), mol=np.ones(5), position=np.random.random((5, 3))))
+        assert 'id' in atoms.fields
+        assert 'mol' in atoms.fields
         yield atoms
     
     @pytest.fixture(scope='class', name='topo')
-    def test_init(self, atoms):
+    def test_init_topo(self, atoms):
         
-        rawTopo = {
+        connection = {
             0: [1],
             1: [0, 2],
             2: [1, 3],
@@ -51,10 +51,11 @@ class TestTopoWithAtom:
             4: [3]
         }
         
-        topo = Topo(rawTopo, atoms.data)
+        topo = Topo(connection=connection)
+        topo.setAtomInstances(atoms.getAtomInstances())
         yield topo
         
-    def test_get_bonds(self, topo, atoms):
+    def test_get_bonds(self, topo):
         
         bonds = topo.getBonds()
-        bondInstances = bonds.getBondInstances()
+        assert bonds.nbonds == 4

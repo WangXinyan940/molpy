@@ -10,8 +10,9 @@ from numpy.lib import recfunctions as rfn
 
 class Model:
     
-    def __init__(self):
+    def __init__(self, n):
         super().__setattr__('_fields', {})
+        self._n = n
         
     def __getattr__(self, field):
         return self._fields[field]
@@ -25,21 +26,22 @@ class Model:
             super().__setattr__(field, value)
             
     def check_alignment(self):
-        field_lengths = list(map(len, self._fields.values()))
-        anyLength = field_lengths[np.random.randint(len(field_lengths))]
-        for l in field_lengths:
-            if l != anyLength:
-                return False
-        return True
+        field_lengths = np.array(map(len, self._fields.values()))
+        if (field_lengths == self._n).all():
+            return True
+        return False
     
     @property    
     def dtype(self):
         tmp = []
         for k, v in self._fields.items():
-            if v.ndim == 1:
-                tmp.append( (k, v.dtype) ) 
+            if isinstance(v, np.ndarray):
+                if v.ndim == 1:
+                    tmp.append( (k, v.dtype) ) 
+                else:
+                    tmp.append( (k, v.dtype, v.shape[1:]) )
             else:
-                tmp.append( (k, v.dtype, v.shape[1:]) )
+                tmp.append( (k, type(v)) )
                 
         return np.dtype(tmp)
     
@@ -47,12 +49,17 @@ class Model:
     def fields(self):
         return self._fields
     
+    @property
+    def size(self):
+        return self._n
+        
     def __contains__(self, o):
         return o in self._fields.keys()
     
     def mergeFields(self, fields, newField, dtype):
         arrs = [self._fields[field] for field in fields]
         self._fields[newField] = np.concatenate(arrs)
+        return self._fields[newField]
     
     def dropFields(self, fields):
         for field in fields:
@@ -79,10 +86,11 @@ class Model:
         
         models = []
         for i in range(len(index)+1):
-            m = Model()
             group_fields = {}
             for k, v in grouped_fields.items():
                 group_fields[k] = v[i]
+            n = len(group_fields[k])
+            m = Model(n)
             m.appendFields(group_fields)
             models.append(m)
         return models

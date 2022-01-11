@@ -16,10 +16,10 @@ class Bond:
 
 class Bonds:
     
-    def __init__(self, bonds, atoms) -> None:
+    def __init__(self, bonds, atoms=None) -> None:
         
         self.bonds = Bonds.unique(bonds)
-        self.atoms = atoms
+        self.atoms = np.array(atoms, dtype=object)
     
     @staticmethod 
     def unique(bonds):
@@ -38,12 +38,10 @@ class Bonds:
     def getBondInstances(self):
         
         if self.atoms is None:
-            raise ValueError(f'need atoms to generate Bond instances')
-
-        tmp = shallowCopyArray(self.atoms)
-
-        itoms = map(lambda copy: Atom(copy=copy), tmp[self.bonds[:, 0]])
-        jtoms = map(lambda copy: Atom(copy=copy), tmp[self.bonds[:, 1]])
+            raise ValueError
+        
+        itoms = self.atoms[self.bonds[:, 0]]
+        jtoms = self.atoms[self.bonds[:, 1]]
 
         bonds = [Bond(atom, btom) for atom, btom in zip(itoms, jtoms)]
         return bonds

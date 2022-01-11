@@ -11,7 +11,8 @@ from molpy.atom import Atom
 class TestAtom:
     
     def test_init(self):
-        atom = Atom([('q', float)], atomid=0, position=np.random.random((1, 3)))
+        atom = Atom()
+        atom.appendFields(dict(q=0, atomid=0))
         assert atom.q == 0
         assert atom.atomid == 0
         assert atom.dtype
