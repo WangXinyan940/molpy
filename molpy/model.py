@@ -6,6 +6,7 @@
 # NOTE: experimental
 
 import numpy as np
+from numpy.lib import recfunctions as rfn
 
 class Model:
     
@@ -19,7 +20,7 @@ class Model:
         
         if field in self._fields:
             # TODO: validation
-            self._fields = value
+            self._fields[field] = value
         else:
             super().__setattr__(field, value)
     
@@ -42,10 +43,12 @@ class Model:
         return o in self._fields.keys()
     
     def mergeFields(self, fields, newField, dtype):
-        pass
+        arrs = [self._fields[field] for field in fields]
+        self._fields[newField] = np.concatenate(arrs)
     
     def dropFields(self, fields):
-        pass
+        for field in fields:
+            del self._fields[field]
     
     def appendFields(self, fields:dict):
         # TODO: validation
@@ -76,4 +79,14 @@ class Model:
             models.append(m)
         return models
             
-        
+    def toStructuredArray(self):
+
+        arrs = self._fields.values()
+        lengths = map(len, arrs)
+        maxLen = max(lengths)
+
+        data = np.empty((maxLen, ), dtype=self.dtype)
+        for key in self._fields.keys():
+            data[key] = self._fields[key]
+
+        return data
