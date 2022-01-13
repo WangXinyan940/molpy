@@ -17,4 +17,4 @@ class Atom(Model):
                 self._fields = fromAtom._fields
             elif hasattr(fromAtom, 'dtype'):
                 for name in fromAtom.dtype.names:
-                    self._fields[name] = fromAtom[name]       
+                    self._fields[name] = fromAtom[name]

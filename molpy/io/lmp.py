@@ -3,7 +3,7 @@
 # date: 2022-01-09
 # version: 0.0.1
 import numpy as np
-from .base import ReaderBase
+from .base import ReaderBase, ReaderTrajBase
 
 
 # Sections will all start with one of these words
@@ -230,27 +230,14 @@ class DataReader(ReaderBase, LAMMPSIO):
 
             return unitcell
         
-class FrameMetaInfo:
-    
-    def __init__(self):
-        self.start_lino = []
-        self.start_byte = []
-        self.timesteps = []
-        self.natoms = []
-        self.box = []
-        self.header = []
-    
-    @property
-    def nFrames(self):
-        return len(self.timesteps)
         
-class DumpReader(ReaderBase, LAMMPSIO):
+class DumpReader(ReaderTrajBase, LAMMPSIO):
     
     format = ['dump']
     
     def pre_parse(self):
         isHeader = True
-        frameMetaInfo = FrameMetaInfo()
+        frameMetaInfo = self.frameMetaInfo()
         with open(self.filename) as f:
 
             line = f.readline()
@@ -276,8 +263,8 @@ class DumpReader(ReaderBase, LAMMPSIO):
             frameMetaInfo.start_byte.append(f.tell())
         self.frameMetaInfo = frameMetaInfo
         
-    def parse(self, frame=1):
-        
+    def parse(self, frame):
+        self.index = frame
         if not isinstance(frame, int):
             raise TypeError
         

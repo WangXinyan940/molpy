@@ -56,9 +56,9 @@ class Model:
     def __contains__(self, o):
         return o in self._fields.keys()
     
-    def mergeFields(self, fields, newField, dtype):
+    def mergeFields(self, fields, newField):
         arrs = [self._fields[field] for field in fields]
-        self._fields[newField] = np.concatenate(arrs)
+        self._fields[newField] = np.vstack(fields).T
         return self._fields[newField]
     
     def dropFields(self, fields):
@@ -66,7 +66,11 @@ class Model:
             del self._fields[field]
     
     def appendFields(self, fields:dict):
-        # TODO: validation
+        
+        for field in fields.values():
+            if field.shape[0] != self._n or len(field) != self._n:
+                raise ValueError
+        
         self._fields.update(fields)
             
     def __getiems__(self, o):
@@ -106,3 +110,10 @@ class Model:
             data[key] = self._fields[key]
 
         return data
+
+    def fromStructuredArray(self, arr):
+        
+        arrDict = {}
+        for field in arr.dtype.fields:
+            arrDict[field] = arr[field]
+        self.appendFields(arrDict)

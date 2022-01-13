@@ -33,6 +33,7 @@ class Topo:
         for bond in bonds:
             connection[bond[0]].append(bond[1])
             connection[bond[1]].append(bond[0])
+        self._connection = dict(connection)
         
     def getBonds(self):
         topo = self._connection

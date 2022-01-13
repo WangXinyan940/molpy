@@ -7,8 +7,7 @@ class System:
     
     def __init__(self):
         
-        self.data = None
-        self.topo = None
+        pass
         
     def getAtoms(self):
         return self.data.getAtoms()

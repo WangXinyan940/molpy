@@ -1,171 +1,131 @@
 # author: Roy Kid
 # contact: lijichen365@126.com
-# date: 2022-01-06
+# date: 2022-01-13
 # version: 0.0.2
 
-import numpy as np
+import os
+import itertools
+import xml.etree.ElementTree as etree
+import math
+import warnings
+from math import sqrt, cos
+from copy import deepcopy
+from collections import defaultdict
 
+_dataDirectories = None
 
-class TypeBase:
-    
-    def __new__(cls, name, matchFunc, *args, **kwargs):
-        
-        if name in cls.types:
-            return cls.types[name]
-        else:
-            ins = super().__new__(cls)
-            cls.types[name] = ins
-            cls.typeID += 1
-            ins.typeID = cls.typeID
-            ins.itemType = cls.__name__[0].lower() + cls.__name__[1:]
-            return ins
-        
-    def __init__(self, name, matchFunc, **attr):
-        
-        self.name = name
-        self._match = matchFunc
-        
-    def match(self, item):
-            return self._match(item)
-    
-class AtomType(TypeBase):
-    
-    typeID = 0
-    types = {}
-    
-class BondType(TypeBase):
-    
-    typeID = 0
-    types = {}
-    
-class AngleType(TypeBase):
-    
-    typeID = 0
-    types = {}
-    
-class DihedralType(TypeBase):
-    
-    typeID = 0
-    types = {}
-    
+def _getDataDirectories():
+    global _dataDirectories
+    if _dataDirectories is None:
+        _dataDirectories = [os.path.join(os.path.dirname(__file__), 'data')]
+        try:
+            from pkg_resources import iter_entry_points
+            for entry in iter_entry_points(group='openmm.forcefielddir'):
+                _dataDirectories.append(entry.load()())
+        except:
+            pass # pkg_resources is not installed
+    return 
+
+def _convertParameterToNumber(param):
+    return float(param)
 
 class ForceField:
     
-    def __init__(self, name, unit='SI') -> None:
-        self.name = name
-        self._templates = {}
+    def __init__(self, ):
         self._atomTypes = {}
-        self._bondTypes = {}
-        self._angleTypes = {}
-        self._dihedralTypes = {}
+        self._atomClasses = {}
         
-    @property
-    def natomTypes(self):
-        return len(self._atomTypes)
-    
-    @property
-    def nbondTypes(self):
-        return len(self._bondTypes)
-    
-    @property
-    def nangleTypes(self):
-        return len(self._angleTypes)
-    
-    @property
-    def ndihedralTypes(self):
-        return len(self._dihedralTypes)
-    
-    @property
-    def ntemplates(self):
-        return len(self._templates)
-        
-    def defAtomType(self, atomName, **attr):
+    def loadXmlFile(self, *files):
 
-        if atomName in self._angleTypes:
-            raise KeyError(f'atomType {atomName} has been defined')
-        
-        self._atomTypes[atomName] = AtomType(atomName, **attr)
-        return self._atomTypes[atomName]
-        
-    def defBondType(self, bondName, **attr):
+        if isinstance(files, tuple):
+            files = list(files)
+        else:
+            files = [files]
 
-        if bondName in self._bondTypes:
-            raise KeyError(f'bondType {bondName} has been defined')
-        self._bondTypes[bondName] = BondType(bondName, **attr)
-        return self._bondTypes[bondName]
-        
-    def defAngleType(self, angleName, **attr):
+        trees = []
 
-        if angleName in self._angleTypes:
-            raise KeyError(f'angleType {angleName} has been defined')
-        self._angleTypes[angleName] = AngleType(angleName, **attr)
-        return self._angleTypes[angleName]
+        i = 0
+        while i < len(files):
+            file = files[i]
+            tree = None
+            try:
+                # this handles either filenames or open file-like objects
+                tree = etree.parse(file)
+            except IOError:
+                for dataDir in _getDataDirectories():
+                    f = os.path.join(dataDir, file)
+                    if os.path.isfile(f):
+                        tree = etree.parse(f)
+                        break
+            except Exception as e:
+                # Fail with an error message about which file could not be read.
+                # TODO: Also handle case where fallback to 'data' directory encounters problems,
+                # but this is much less worrisome because we control those files.
+                msg  = str(e) + '\n'
+                if hasattr(file, 'name'):
+                    filename = file.name
+                else:
+                    filename = str(file)
+                msg += "ForceField.loadFile() encountered an error reading file '%s'\n" % filename
+                raise Exception(msg)
+            if tree is None:
+                raise ValueError('Could not locate file "%s"' % file)
+            
+        # Load the atom types.
         
-    def defDihedralType(self, dihedralName, **attr):
-        
-        if dihedralName in self._dihedralTypes:
-            raise KeyError(f'dihedralType {dihedralName} has been defined')
-        self._dihedralTypes[dihedralName] = DihedralType(dihedralName, **attr)
-        return self._dihedralTypes[dihedralName]
-    
-    def getAtomType(self, name):
-        atomType = self._atomTypes.get(name, None)
-        if atomType is None:
-            raise KeyError(f'atomType {name} is not defined yet')
-        return atomType
-        
-    def typify(self, atoms, isBond=True, isAngle=True, isDihedral=True):
-        """Add information from the forcefield to the group
         """
-        # typify atom from forcefield.atomType
-        perAtomData = atoms.data
-        topo = atoms.topo
-        
-        self.typifyAtom(perAtomData)
-        
-        # typify bond from forcefield.bondType
-        if isBond:
-            for bond in atoms.bonds:
-                self.typifyBond(bond)
-            
-        # typify angle from forcefield.angleType 
-        if isAngle:
-            for angle in atoms.angles:
-                self.typifyAngle(angle)
+            <AtomTypes>
+                <Type name="380" class="OW" element="O" mass="15.999"/>
+                <Type name="381" class="HW" element="H" mass="1.008"/>
+            </AtomTypes>
+        """
 
-        # typify dihedral from forcefield.dihedralType 
-        if isDihedral:
-            for dihedral in atoms.dihedrals:
-                self.typifyDihedral(dihedral)
-            
-    def typifyAtom(self, atoms):
+        for tree in trees:
+            if tree.getroot().find('AtomTypes') is not None:
+                for type in tree.getroot().find('AtomTypes').findall('Type'):
+                    self.defAtomType(type.attrib)
+                    
+                """
+            <BondTypes>
+                <Type name1="380" name2="381" style="Harmonic" length="0.09572" k="376560"/>
+            </BondTypes>
+                """
+                    
+        for tree in trees:
+            if tree.getroot().find('BondTypes') is not None:
+                for type in tree.getroot().find('BondTypes').findall('Type'):
+                    self.defBondType(type.attrib)
+                    
 
-        atomTypeArray = np.zeros(len(atoms), dtype=object)
-        for atomType in self.atomTypes.values():
-            # matchFun = np.vectorize(atomType.match)
-            matchFun = atomType.match
-            mask = matchFun(atoms)
-            atomTypeArray[mask] = atomType
-        return atomTypeArray
-    
-    def typifyBond(self, topo):
+
+    def defAtomType(self, parameters):
+        """Define a new atom type."""
+        name = parameters.get('name', KeyError)
+        if name in self._atomTypes:
+            raise ValueError('Found multiple definitions for atom type: '+name)
+        atomClass = parameters.get('class', None)
+        element = parameters.get('element', None)
+        mass = parameters.get('mass', None)
         
-        bonds = topo.bonds
+        self._atomTypes[name] = AtomType(name, )
         
-                
-    @property
-    def atomTypes(self):
-        return self._atomTypes
+        if atomClass in self._atomClasses:
+            typeSet = self._atomClasses[atomClass]
+        else:
+            typeSet = set()
+            self._atomClasses[atomClass] = typeSet
+        typeSet.add(name)
+        self._atomClasses[''].add(name)
+        
+    def defBondType(self, parameters):
+        
+        if 'name1' in parameters and 'name2' in parameters:
+            
+            atom1 = self._atomTypes[parameters['name1']]
+            atom2 = self._atomTypes[parameters['name2']]
+        
+        
+class AtomType:
     
-    @property
-    def bondTypes(self):
-        return self._bondTypes
-    
-    @property
-    def angleTypes(self):
-        return self._angleTypes
-    
-    @property
-    def dihedralTypes(self):
-        return self._dihedralTypes
-    
+    def __init__(self, name):
+        self.name = name

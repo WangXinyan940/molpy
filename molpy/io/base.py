@@ -34,3 +34,53 @@ class ReaderBase(metaclass=IOMetaClass):
 class WriteBase:
     
     pass
+
+
+class FrameMetaInfo:
+    
+    def __init__(self):
+        self.start_lino = []
+        self.start_byte = []
+        self.timesteps = []
+        self.natoms = []
+        self.box = []
+        self.header = []
+    
+    @property
+    def nframes(self):
+        return len(self.timesteps)
+    
+class ReaderTrajBase(ReaderBase):
+    
+    def __init__(self, filename, **kwargs):
+        super().__init__()
+        self.frameMetaInfo = FrameMetaInfo()
+        self.index = 0
+        
+    @property
+    def start_lino(self):
+        return self.frameMetaInfo.start_lino[self.index]
+    
+    @property
+    def start_byte(self):
+        return self.frameMetaInfo.start_byte[self.index]
+        
+    @property
+    def timesteps(self):
+        return self.timesteps[self.index]
+    
+    @property
+    def natoms(self):
+        return self.frameMetaInfo.natoms[self.index]
+    
+    @property
+    def box(self):
+        return self.frameMetaInfo.box[self.index]
+    
+    @property
+    def header(self):
+        return self.frameMetaInfo.header
+    
+    @property
+    def nframes(self):
+        return self.frameMetaInfo.nframes
