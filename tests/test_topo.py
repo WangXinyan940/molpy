@@ -4,9 +4,6 @@
 # version: 0.0.2
 
 import pytest
-import numpy as np
-from molpy.atoms import Atoms
-from molpy.bond import Bond
 from molpy.topo import Topo
 
 class TestTopoWithoutAtom:

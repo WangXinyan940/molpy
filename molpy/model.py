@@ -1,12 +1,9 @@
 # author: Roy Kid
 # contact: lijichen365@126.com
 # date: 2022-01-07
-# version: 0.0.1
-
-# NOTE: experimental
+# version: 0.0.2
 
 import numpy as np
-from numpy.lib import recfunctions as rfn
 
 class Model:
     

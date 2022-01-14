@@ -4,7 +4,6 @@
 # version: 0.0.1
 
 from .model import Model
-import numpy as np
 
 class Atom(Model):
     

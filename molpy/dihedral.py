@@ -4,8 +4,6 @@
 # version: 0.0.2
 
 import numpy as np
-from molpy.atom import Atom
-
 
 class Dihedral:
     
