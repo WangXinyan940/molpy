@@ -84,15 +84,27 @@ class Atoms(Model):
     def calcCenterOfMass(self):
         pass
     
+    def getBonds(self):
+        return self._topo.bonds
+    
     def getBondIdx(self):
-        return self._topo.getBonds()
+        return self._topo.bondIdx
+    
+    def getAngles(self):
+        return self._topo.angles
     
     def getAngleIdx(self):
-        return self._topo.getAngles()
+        return self._topo.angleIdx
+    
+    def getDihedrals(self):
+        return self._topo.dihedrals
     
     def getDihedralIdx(self):
-        return self._topo.getDihedrals()
+        return self._topo.dihedralIdx
     
-    bonds = property(getBondIdx)
-    angles = property(getAngleIdx)
-    dihedrals = property(getDihedralIdx)
+    bonds = property(getBonds)
+    angles = property(getAngles)
+    dihedrals = property(getDihedrals)
+    bondIdx = property(getBondIdx)
+    angleIdx = property(getAngleIdx)
+    dihedralIdx = property(getDihedralIdx)

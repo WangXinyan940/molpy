@@ -122,3 +122,10 @@ class Topo:
     def getDihedralIdx(self):
         dihe = self.getDihedrals()
         return dihe.dihedralIdx
+    
+    bonds = property(getBonds)
+    angles = property(getAngles)
+    dihedrals = property(getDihedrals)
+    bondIdx = property(getBondIdx)
+    angleIdx = property(getAngleIdx)
+    dihedralIdx = property(getDihedralIdx)

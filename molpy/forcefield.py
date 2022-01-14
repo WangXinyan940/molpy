@@ -30,12 +30,12 @@ class AtomType(TypeBase):
         
 class BondType(TypeBase):
     
-    def __init__(self, id, name, bondClass, attr:dict):
+    def __init__(self, id, name, itomType, jtomType, bondClass, attr:dict):
         super().__init__(id, name, attr)
         self.bondClass = bondClass
+        self.itomType = itomType
+        self.jtomType = jtomType
 
-
-# below
 
 class TypeManagement:
     
@@ -65,7 +65,7 @@ class AtomTypeManagement(TypeManagement):
         if atomClass in self._id2AtomType:
             self._class2AtomTypes[atomClass].add(at) 
         else:
-            self._class2AtomTypes[atomClass]= set()
+            self._class2AtomTypes[atomClass] = set()
             
         self._nAtomType += 1
         return at
@@ -78,9 +78,7 @@ class AtomTypeManagement(TypeManagement):
     
     def getAtomTypeByClass(self, class_):
         return list(self._class2AtomTypes[class_])
-    
-    def matchAtomType(self, ):
-        pass
+
     
 class BondTypeManagement(TypeManagement):
     
@@ -93,10 +91,10 @@ class BondTypeManagement(TypeManagement):
         
         self._nBondType = 0
         
-    def defBondType(self, name, bondClass=None, attr=None):
+    def defBondType(self, name, itomType, jtomType, bondClass=None, attr=None):
         
         bondTypeId = self._nBondType + 1
-        bt = BondType(bondTypeId, name, bondClass, attr)
+        bt = BondType(bondTypeId, name, itomType, jtomType, bondClass, attr)
         
         if name in self._name2BondType:
             raise KeyError(f'BondTypeName {name} is already defined!')
@@ -105,9 +103,19 @@ class BondTypeManagement(TypeManagement):
             raise KeyError(f'BondTypeId {bondTypeId} is already defined! This error is a bug of the atomTypeId management, please contact to developers.')
         
         if bondClass in self._class2BondType:
-            self._class2BondType[bondClass] = set()
-        else:
             self._class2BondType[bondClass].add(bondClass)
+        else:
+            self._class2BondType[bondClass] = set()
+        
+        if itomType not in self._atomTypes2BondType:
+            self._atomTypes2BondType[itomType] = {jtomType: bt}
+        else:
+            self._atomTypes2BondType[itomType][jtomType] = bt
+        
+        if jtomType not in self._atomTypes2BondType:
+            self._atomTypes2BondType[jtomType] = {itomType: bt}
+        else:
+            self._atomTypes2BondType[jtomType][itomType] = bt
         
         self._nBondType += 1
         return bt
@@ -121,8 +129,11 @@ class BondTypeManagement(TypeManagement):
     def getBondTypeByClass(self, class_):
         return list(self._class2BondTypes[class_])
     
-    def matchBondType(self, ):
-        pass
+    def getBondTypeByAtomType(self, twoAtomTypes):
+        itomType, jtomType = twoAtomTypes
+        return self._atomTypes2BondType[itomType][jtomType]
+        
+        
         
 class AngleTypeManagement(TypeManagement):
     pass
@@ -143,13 +154,24 @@ class ForceField(AtomTypeManagement, BondTypeManagement):
         self._unit = unit
     
     def matchAtomTypeOfAtoms(self, atoms, field='type', ref:Literal['id', 'name', 'class']='name'):
-        
+        """ literal type -> atomType obj. Passing an atoms instances, according its field to get corresponding atomType.
+
+        Returns:
+            atoms: the atoms passed in this function, and add a new field atomType
+        """
         types = atoms.fields[field]
-        # ats = map(self._atomTypeManagement.getAtomTypeByName, types)
-        ats = np.vectorize(getattr(self, f'getAtomTypeBy{ref.capitalize()}'))(types)
+        
+        queryFunc = getattr(self, f'getAtomTypeBy{ref.capitalize()}')
+        ats = np.vectorize(queryFunc)(types)
         atoms.appendFields({'atomType': ats})
         return atoms
     
     def matchBondTypeOfAtoms(self, atoms, ):
+        
         bonds = atoms.getBondIdx()
-        return bonds
+        atomTypes = atoms.fields['atomType']
+        atomTypeOfTwoAtomsInBond = atomTypes[bonds]
+        queryFunc = getattr(self, f'getBondTypeByAtomType')
+        bts = np.apply_along_axis(queryFunc, 1, atomTypeOfTwoAtomsInBond)
+        return bts
+        
