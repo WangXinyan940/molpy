@@ -16,9 +16,17 @@ class TestAtoms:
         assert len(groups) == 3
         
     def test_get_atom_instances(self, atoms):
-        atomInstances = atoms.getAtomInstances()
+        atomInstances = atoms.getAtoms()
         assert len(atomInstances) == atoms.natoms
         assert atomInstances[0].id == 0
+        
+    def test_init_topo(self, atoms):
+        bonds = atoms.getBondIdx()
+        assert bonds.nbonds == 4
+        angles = atoms.getAngleIdx()
+        assert angles.nangles == 3
+        dihedrals = atoms.getDihedralIdx()
+        assert dihedrals.ndihedrals == 2
         
 class TestAtomsSelections:
         

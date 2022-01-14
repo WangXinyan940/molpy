@@ -15,7 +15,7 @@ class TestBonds:
     def test_init(self, atoms):
         
         rawBonds = [[0, 1], [1, 2], [2, 3], [3, 4], [1, 0]]
-        bonds = Bonds(rawBonds, atoms.getAtomInstances())
+        bonds = Bonds(rawBonds, atoms.atoms)
         assert bonds.nbonds == len(bonds) == 4
         yield bonds
         

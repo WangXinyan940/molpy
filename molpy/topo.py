@@ -3,47 +3,81 @@
 # date: 2022-01-07
 # version: 0.0.2
 
-from itertools import combinations
-from .bond import Bonds
-from .angle import Angles
-from .dihedral import Dihedrals
 from collections import defaultdict
+from itertools import combinations
+
+from .angle import Angles
+from .bond import Bonds
+from .dihedral import Dihedrals
+
 
 class Topo:
     
-    def __init__(self, connection=None):
+    def __init__(self, connection=None, atoms=None):
+        
+        self.reset()
         
         if connection is not None:
-            self._connection = connection
-    
-    def setAtomInstances(self, atoms):
-        self._atoms = atoms
-    
-    @property
-    def atoms(self):
-        return getattr(self, '_atoms', None)
+            if isinstance(connection, dict):
+                self.setConnection(connection)
+            elif isinstance(connection, (list, tuple)):
+                self.constructConnectionFromBonds(connection)
+        
+        if atoms is not None: 
+            self.setAtoms(atoms)
+
+
+    def reset(self):
+        self._atoms = None
+        self._bonds = None
+        self._angles = None
+        self._dihedrals = None
+        self._hasBond = False
+        self._hasAngle = False
+        self._hasDihedral = False    
+        self._hasAtom = False
+        
+    def setAtoms(self, atoms):
+        
+        atomArgType = getattr(atoms, '__class__', None)  # avoid to use :=
+        if atomArgType:
+            if atomArgType.__name__ == 'Atoms':
+                self._atoms = atoms.getAtoms()
+                
+        self._hasAtom = True
+                
         
     def setConnection(self, connection):
         self._connection = connection
+        self.reset()
     
     def constructConnectionFromBonds(self, bonds):
-        self._bonds = bonds
-        self._hasBonds = True
+
         connection = defaultdict(list)
         for bond in bonds:
             connection[bond[0]].append(bond[1])
             connection[bond[1]].append(bond[0])
         self._connection = dict(connection)
+        self.reset()
         
     def getBonds(self):
+        
+        if self._hasBond:
+            return self._bonds
+        
         topo = self._connection
         rawBonds = []
         for c, ps in topo.items():
             for p in ps:
                 rawBonds.append([c, p])
-        return Bonds(rawBonds, self.atoms)
+
+        self._bonds = Bonds(rawBonds, self._atoms)
+        return self._bonds
     
     def getAngles(self):
+        
+        if self._hasAngle:
+            return self._angles
 
         topo = self._connection
         rawAngles = []
@@ -52,10 +86,13 @@ class Topo:
                 continue
             for (itom, ktom) in combinations(ps, 2):
                 rawAngles.append([itom, c, ktom])
-
-        return Angles(rawAngles, self.atoms)
+        self._angles = Angles(rawAngles, self._atoms)
+        return self._angles
     
     def getDihedrals(self):
+        
+        if self._hasDihedral:
+            return self._dihedrals
      
         topo = self._connection
         rawDihes = []
@@ -70,4 +107,18 @@ class Topo:
                 for ltom in topo[ktom]:
                     if ltom != jtom:
                         rawDihes.append([itom, jtom, ktom, ltom])
-        return Dihedrals(rawDihes, self.atoms)
+        self._dihedrals = Dihedrals(rawDihes, self._atoms)
+        return self._dihedrals
+    
+    def getBondIdx(self):
+        
+        bonds = self.getBonds()
+        return bonds.bondIdx
+    
+    def getAngleIdx(self):
+        angles = self.getAngles()
+        return angles.angleIdx
+    
+    def getDihedralIdx(self):
+        dihe = self.getDihedrals()
+        return dihe.dihedralIdx

@@ -57,6 +57,6 @@ class TestModel:
         assert len(data) == 9
         
     def test_check_alignment(self, model):
-        model.appendFields({'test': np.arange(4)})
+        model.appendFields({'test': np.arange(9)})
         assert not model.check_alignment()
         

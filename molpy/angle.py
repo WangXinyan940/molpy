@@ -19,7 +19,7 @@ class Angles:
     
     def __init__(self, angles, atoms=None):
         
-        self.angles = Angles.unique(angles)
+        self.angleIdx = Angles.unique(angles)
         self.atoms = atoms
         
     @staticmethod
@@ -30,19 +30,19 @@ class Angles:
     
     @property
     def nangles(self):
-        return len(self.angles)
+        return len(self.angleIdx)
     
     def __len__(self):
-        return len(self.angles)
+        return len(self.angleIdx)
     
     def getAngleInstances(self):
         
         if self.atoms is None:
             raise ValueError(f'need atoms to generate Angle instances')
     
-        itoms = self.atoms[self.angles[:, 0]]
-        jtoms = self.atoms[self.angles[:, 1]]
-        ktoms = self.atoms[self.angles[:, 2]]
+        itoms = self.atoms[self.angleIdx[:, 0]]
+        jtoms = self.atoms[self.angleIdx[:, 1]]
+        ktoms = self.atoms[self.angleIdx[:, 2]]
         
         angles = [Angle(itom, jtom, ktom) for itom, jtom, ktom in zip(itoms, jtoms, ktoms)]      
         return angles  
