@@ -3,129 +3,175 @@
 # date: 2022-01-13
 # version: 0.0.2
 
-import os
-import itertools
-import xml.etree.ElementTree as etree
-import math
-import warnings
-from math import sqrt, cos
-from copy import deepcopy
-from collections import defaultdict
+from typing import Literal
 
-_dataDirectories = None
+import numpy as np
 
-def _getDataDirectories():
-    global _dataDirectories
-    if _dataDirectories is None:
-        _dataDirectories = [os.path.join(os.path.dirname(__file__), 'data')]
-        try:
-            from pkg_resources import iter_entry_points
-            for entry in iter_entry_points(group='openmm.forcefielddir'):
-                _dataDirectories.append(entry.load()())
-        except:
-            pass # pkg_resources is not installed
-    return 
-
-def _convertParameterToNumber(param):
-    return float(param)
-
-class ForceField:
+class TypeBase:
     
-    def __init__(self, ):
-        self._atomTypes = {}
-        self._atomClasses = {}
-        
-    def loadXmlFile(self, *files):
-
-        if isinstance(files, tuple):
-            files = list(files)
-        else:
-            files = [files]
-
-        trees = []
-
-        i = 0
-        while i < len(files):
-            file = files[i]
-            tree = None
-            try:
-                # this handles either filenames or open file-like objects
-                tree = etree.parse(file)
-            except IOError:
-                for dataDir in _getDataDirectories():
-                    f = os.path.join(dataDir, file)
-                    if os.path.isfile(f):
-                        tree = etree.parse(f)
-                        break
-            except Exception as e:
-                # Fail with an error message about which file could not be read.
-                # TODO: Also handle case where fallback to 'data' directory encounters problems,
-                # but this is much less worrisome because we control those files.
-                msg  = str(e) + '\n'
-                if hasattr(file, 'name'):
-                    filename = file.name
-                else:
-                    filename = str(file)
-                msg += "ForceField.loadFile() encountered an error reading file '%s'\n" % filename
-                raise Exception(msg)
-            if tree is None:
-                raise ValueError('Could not locate file "%s"' % file)
-            
-        # Load the atom types.
-        
-        """
-            <AtomTypes>
-                <Type name="380" class="OW" element="O" mass="15.999"/>
-                <Type name="381" class="HW" element="H" mass="1.008"/>
-            </AtomTypes>
-        """
-
-        for tree in trees:
-            if tree.getroot().find('AtomTypes') is not None:
-                for type in tree.getroot().find('AtomTypes').findall('Type'):
-                    self.defAtomType(type.attrib)
-                    
-                """
-            <BondTypes>
-                <Type name1="380" name2="381" style="Harmonic" length="0.09572" k="376560"/>
-            </BondTypes>
-                """
-                    
-        for tree in trees:
-            if tree.getroot().find('BondTypes') is not None:
-                for type in tree.getroot().find('BondTypes').findall('Type'):
-                    self.defBondType(type.attrib)
-                    
-
-
-    def defAtomType(self, parameters):
-        """Define a new atom type."""
-        name = parameters.get('name', KeyError)
-        if name in self._atomTypes:
-            raise ValueError('Found multiple definitions for atom type: '+name)
-        atomClass = parameters.get('class', None)
-        element = parameters.get('element', None)
-        mass = parameters.get('mass', None)
-        
-        self._atomTypes[name] = AtomType(name, )
-        
-        if atomClass in self._atomClasses:
-            typeSet = self._atomClasses[atomClass]
-        else:
-            typeSet = set()
-            self._atomClasses[atomClass] = typeSet
-        typeSet.add(name)
-        self._atomClasses[''].add(name)
-        
-    def defBondType(self, parameters):
-        
-        if 'name1' in parameters and 'name2' in parameters:
-            
-            atom1 = self._atomTypes[parameters['name1']]
-            atom2 = self._atomTypes[parameters['name2']]
-        
-        
-class AtomType:
-    
-    def __init__(self, name):
+    def __init__(self, id, name, attr):
+        self.id = id
         self.name = name
+        self.update(attr)
+        
+    def update(self, attr:dict):
+        for k, v in attr.items():
+            setattr(self, k, v)
+            
+    def __repr__(self):
+        return f'< {self.__class__.__name__} {self.id}: {self.name} >'
+
+class AtomType(TypeBase):
+    
+    def __init__(self, id, name, atomClass, attr:dict):
+        super().__init__(id, name, attr)
+        self.atomClass = atomClass
+
+        
+class BondType(TypeBase):
+    
+    def __init__(self, id, name, itomType, jtomType, bondClass, attr:dict):
+        super().__init__(id, name, attr)
+        self.bondClass = bondClass
+        self.itomType = itomType
+        self.jtomType = jtomType
+
+
+class TypeManagement:
+    
+    pass
+
+class AtomTypeManagement(TypeManagement):
+    
+    def __init__(self):
+        self._id2AtomType = {}  # id -> atomType
+        self._name2AtomType = {}  # name -> atomType
+        self._class2AtomTypes = {}  # class -> [atomType]
+        self._nAtomType = 0
+        
+    def defAtomType(self, name, atomClass=None, attr=None):
+        
+        atomTypeId = self._nAtomType + 1  # start from 1
+        at = AtomType(atomTypeId, name, atomClass, attr)
+        
+        if name in self._name2AtomType:
+            raise KeyError(f'AtomTypeName {name} is already defined!')
+        self._name2AtomType[name] = at
+        
+        if atomTypeId in self._id2AtomType:
+            raise KeyError(f'AtomTypeId {atomTypeId} is already defined! This error is a bug of the atomTypeId management, please contact to developers.')
+        self._id2AtomType[atomTypeId] = at
+        
+        if atomClass in self._id2AtomType:
+            self._class2AtomTypes[atomClass].add(at) 
+        else:
+            self._class2AtomTypes[atomClass] = set()
+            
+        self._nAtomType += 1
+        return at
+    
+    def getAtomTypeByName(self, name):
+        return self._name2AtomType[name]
+    
+    def getAtomTypeById(self, id):
+        return self._id2AtomType[id]
+    
+    def getAtomTypeByClass(self, class_):
+        return list(self._class2AtomTypes[class_])
+
+    
+class BondTypeManagement(TypeManagement):
+    
+    def __init__(self):
+        self._id2BondType = {}
+        self._name2BondType = {}
+        self._class2BondType = {}
+        
+        self._atomTypes2BondType = {}  # {atomType1: {atomType2: bondType}}
+        
+        self._nBondType = 0
+        
+    def defBondType(self, name, itomType, jtomType, bondClass=None, attr=None):
+        
+        bondTypeId = self._nBondType + 1
+        bt = BondType(bondTypeId, name, itomType, jtomType, bondClass, attr)
+        
+        if name in self._name2BondType:
+            raise KeyError(f'BondTypeName {name} is already defined!')
+        
+        if bondTypeId in self._id2BondType:
+            raise KeyError(f'BondTypeId {bondTypeId} is already defined! This error is a bug of the atomTypeId management, please contact to developers.')
+        
+        if bondClass in self._class2BondType:
+            self._class2BondType[bondClass].add(bondClass)
+        else:
+            self._class2BondType[bondClass] = set()
+        
+        if itomType not in self._atomTypes2BondType:
+            self._atomTypes2BondType[itomType] = {jtomType: bt}
+        else:
+            self._atomTypes2BondType[itomType][jtomType] = bt
+        
+        if jtomType not in self._atomTypes2BondType:
+            self._atomTypes2BondType[jtomType] = {itomType: bt}
+        else:
+            self._atomTypes2BondType[jtomType][itomType] = bt
+        
+        self._nBondType += 1
+        return bt
+    
+    def getBondTypeByName(self, name):
+        return self._name2BondType[name]
+    
+    def getBondTypeById(self, id):
+        return self._id2BondType[id]
+    
+    def getBondTypeByClass(self, class_):
+        return list(self._class2BondTypes[class_])
+    
+    def getBondTypeByAtomType(self, twoAtomTypes):
+        itomType, jtomType = twoAtomTypes
+        return self._atomTypes2BondType[itomType][jtomType]
+        
+        
+        
+class AngleTypeManagement(TypeManagement):
+    pass
+
+class DihedralTypeManagement(TypeManagement):
+    pass
+
+class ImproperTypeManagement(TypeManagement):
+    pass
+    
+class ForceField(AtomTypeManagement, BondTypeManagement):
+    
+    def __init__(self, unit='SI'):
+        
+        AtomTypeManagement.__init__(self)
+        BondTypeManagement.__init__(self)
+        
+        self._unit = unit
+    
+    def matchAtomTypeOfAtoms(self, atoms, field='type', ref:Literal['id', 'name', 'class']='name'):
+        """ literal type -> atomType obj. Passing an atoms instances, according its field to get corresponding atomType.
+
+        Returns:
+            atoms: the atoms passed in this function, and add a new field atomType
+        """
+        types = atoms.fields[field]
+        
+        queryFunc = getattr(self, f'getAtomTypeBy{ref.capitalize()}')
+        ats = np.vectorize(queryFunc)(types)
+        atoms.appendFields({'atomType': ats})
+        return atoms
+    
+    def matchBondTypeOfAtoms(self, atoms, ):
+        
+        bonds = atoms.getBondIdx()
+        atomTypes = atoms.fields['atomType']
+        atomTypeOfTwoAtomsInBond = atomTypes[bonds]
+        queryFunc = getattr(self, f'getBondTypeByAtomType')
+        bts = np.apply_along_axis(queryFunc, 1, atomTypeOfTwoAtomsInBond)
+        return bts
+        

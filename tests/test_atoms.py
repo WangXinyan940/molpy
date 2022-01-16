@@ -6,7 +6,6 @@
 import pytest
 import numpy as np
 import numpy.testing as npt
-from molpy.atoms import Atoms
 
 
 class TestAtoms:
@@ -16,9 +15,17 @@ class TestAtoms:
         assert len(groups) == 3
         
     def test_get_atom_instances(self, atoms):
-        atomInstances = atoms.getAtomInstances()
+        atomInstances = atoms.getAtoms()
         assert len(atomInstances) == atoms.natoms
         assert atomInstances[0].id == 0
+        
+    def test_init_topo(self, atoms):
+        bonds = atoms.getBondIdx()
+        assert len(bonds) == 4
+        angles = atoms.getAngleIdx()
+        assert len(angles) == 3
+        dihedrals = atoms.getDihedralIdx()
+        assert len(dihedrals) == 2
         
 class TestAtomsSelections:
         

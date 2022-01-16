@@ -3,8 +3,6 @@
 # date: 2022-01-11
 # version: 0.0.2
 
-# TODO: new model to replace structure array
-
 import pytest
 import numpy as np
 import numpy.testing as npt
@@ -57,6 +55,6 @@ class TestModel:
         assert len(data) == 9
         
     def test_check_alignment(self, model):
-        model.appendFields({'test': np.arange(4)})
+        model.appendFields({'test': np.arange(9)})
         assert not model.check_alignment()
         

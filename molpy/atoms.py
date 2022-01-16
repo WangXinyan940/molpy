@@ -7,13 +7,12 @@ from .topo import Topo
 from .model import Model
 from .atom import Atom
 import numpy as np
-from numpy.lib import recfunctions as rfn
-        
+
 class Atoms(Model):
     
-    def __init__(self, natoms=None, data:dict=None, fromAtoms=None):
+    def __init__(self, natoms=None, data:dict=None, fromAtoms=None, connection=None):
+        
         super().__init__(natoms)
-        self._topo = Topo()
         if data is not None:
             self._fields.update(data)
         if fromAtoms is not None:
@@ -22,19 +21,18 @@ class Atoms(Model):
             elif isinstance(fromAtoms, np.ndarray):
                 for name in fromAtoms.dtype.names:
                     self._fields[name] = fromAtoms[name]
+        
+        # this must be the last one be initialize   
+        self._topo = Topo(connection, self)
     
     @property
     def natoms(self):
         return self._n
     
-    @property
-    def atomInstances(self):
-        return self.getAtoms()
-    
     def __len__(self):
         return self._n
     
-    def getAtomInstances(self):
+    def getAtoms(self):
         
         struc = self.toStructuredArray()
         atomList = np.zeros_like(struc, dtype=object)
@@ -42,6 +40,7 @@ class Atoms(Model):
             atomList[i] = Atom(fromAtom=struc[i])
         return atomList
 
+    atoms = property(getAtoms)
 
     def selectByFunc(self, func):
         """return selected atoms by the function. 
@@ -80,38 +79,32 @@ class Atoms(Model):
             return self.mergeFields(['x', 'y', 'z'], 'position')
         
     def calcRadiusOfGyration(self):
-        
-        # def radgyr(atomgroup, masses, total_mass=None):
-        if 'mass' in self.data.dtype.names:
-            masses = self.data['mass']
-        else:
-            masses = np.ones(len(self.natoms))
-        # coordinates change for each frame
-        coordinates = self.positions
-        center_of_mass = self.center_of_mass()
-
-        # get squared distance from center
-        ri_sq = (coordinates-center_of_mass)**2
-        # sum the unweighted positions
-        sq = np.sum(ri_sq, axis=1)
-        sq_x = np.sum(ri_sq[:,[1,2]], axis=1) # sum over y and z
-        sq_y = np.sum(ri_sq[:,[0,2]], axis=1) # sum over x and z
-        sq_z = np.sum(ri_sq[:,[0,1]], axis=1) # sum over x and y
-
-        # make into array
-        sq_rs = np.array([sq, sq_x, sq_y, sq_z])
-
-        # weight positions
-        rog_sq = np.sum(masses*sq_rs, axis=1)/np.sum(masses)
-        # square root and return
-        return np.sqrt(rog_sq)
+        pass
     
     def calcCenterOfMass(self):
-        if 'mass' in self.data.dtype.names:
-            masses = self.data['mass']
-        else:
-            masses = np.ones(len(self.natoms))
-        cm = self.positions * masses[:, None]
-        cm = np.sum(cm, axis=0) / len(cm) / np.sum(masses)
-        return cm
-        
+        pass
+    
+    def getBonds(self):
+        return self._topo.bonds
+    
+    def getBondIdx(self):
+        return self._topo.bondIdx
+    
+    def getAngles(self):
+        return self._topo.angles
+    
+    def getAngleIdx(self):
+        return self._topo.angleIdx
+    
+    def getDihedrals(self):
+        return self._topo.dihedrals
+    
+    def getDihedralIdx(self):
+        return self._topo.dihedralIdx
+    
+    bonds = property(getBonds)
+    angles = property(getAngles)
+    dihedrals = property(getDihedrals)
+    bondIdx = property(getBondIdx)
+    angleIdx = property(getAngleIdx)
+    dihedralIdx = property(getDihedralIdx)

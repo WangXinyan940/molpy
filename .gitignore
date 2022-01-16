@@ -9,6 +9,7 @@
 *.dump
 gen*
 paper/
+mpidwater.xml
 
 # test data
 samples/

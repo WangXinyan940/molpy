@@ -4,8 +4,6 @@
 # version: 0.0.2
 
 import numpy as np
-from molpy.atom import Atom
-
 
 class Dihedral:
     
@@ -15,7 +13,7 @@ class Dihedral:
 class Dihedrals:
     
     def __init__(self, dihedrals, atoms) -> None:
-        self.dihedrals = Dihedrals.unique(dihedrals)
+        self.dihedralIdx = Dihedrals.unique(dihedrals)
         self.atoms = atoms
         
     @staticmethod
@@ -26,20 +24,20 @@ class Dihedrals:
         
     @property
     def ndihedrals(self):
-        return len(self.dihedrals)
+        return len(self.dihedralIdx)
     
     def __len__(self):
-        return len(self.dihedrals)
+        return len(self.dihedralIdx)
     
     def getDihedralInstances(self):
         
         if self.atoms is None:
             raise ValueError(f'need atoms to generate Angle instances')
         
-        itoms = self.atoms[self.angles[:, 0]]
-        jtoms = self.atoms[self.angles[:, 1]]
-        ktoms = self.atoms[self.angles[:, 2]]
-        ltoms = self.atoms[self.angles[:, 3]]
+        itoms = self.atoms[self.dihedralIdx[:, 0]]
+        jtoms = self.atoms[self.dihedralIdx[:, 1]]
+        ktoms = self.atoms[self.dihedralIdx[:, 2]]
+        ltoms = self.atoms[self.dihedralIdx[:, 3]]
         
         dihes = [Dihedrals(itom, jtom, ktom, ltom) for itom, jtom, ktom, ltom in zip(itoms, jtoms, ktoms, ltoms)]
         return dihes

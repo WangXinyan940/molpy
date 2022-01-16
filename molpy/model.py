@@ -1,18 +1,16 @@
 # author: Roy Kid
 # contact: lijichen365@126.com
 # date: 2022-01-07
-# version: 0.0.1
-
-# NOTE: experimental
+# version: 0.0.2
 
 import numpy as np
-from numpy.lib import recfunctions as rfn
 
 class Model:
     
     def __init__(self, n):
         super().__setattr__('_fields', {})
-        self._n = n
+        # self._n = n
+        super().__setattr__('_n', n)
         
     def __getattr__(self, field):
         return self._fields[field]
@@ -68,7 +66,9 @@ class Model:
     def appendFields(self, fields:dict):
         
         for field in fields.values():
-            if field.shape[0] != self._n or len(field) != self._n:
+            if hasattr(field, 'shape') and (field.shape[0] != self._n):
+                raise ValueError
+            elif isinstance(field, (list, tuple)) and (len(field) != self._n):
                 raise ValueError
         
         self._fields.update(fields)
@@ -77,6 +77,9 @@ class Model:
         
         if isinstance(o, str):
             return self._fields[o]
+        
+    def __contains__(self, o):
+        return o in self.fields
         
     def groupby(self, field):
         
