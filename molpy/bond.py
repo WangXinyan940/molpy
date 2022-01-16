@@ -5,9 +5,6 @@
 
 import numpy as np
 
-from molpy.atom import Atom
-from molpy.utils import shallowCopyArray
-
 class Bond:
     
     def __init__(self, itom, jtom):

@@ -4,9 +4,6 @@
 # version: 0.0.1
 
 import numpy as np
-
-from molpy.atom import Atom
-from molpy.utils import shallowCopyArray
      
 class Angle:
     

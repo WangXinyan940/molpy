@@ -32,5 +32,5 @@ class TestForceField:
         if 'atomType' not in atoms:
             atoms = ff.matchAtomTypeOfAtoms(atoms, field='type', ref='name')
         atoms = ff.matchBondTypeOfAtoms(atoms)
-        print(atoms)
+        
         

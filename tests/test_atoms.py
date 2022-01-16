@@ -6,7 +6,6 @@
 import pytest
 import numpy as np
 import numpy.testing as npt
-from molpy.atoms import Atoms
 
 
 class TestAtoms:
@@ -22,11 +21,11 @@ class TestAtoms:
         
     def test_init_topo(self, atoms):
         bonds = atoms.getBondIdx()
-        assert bonds.nbonds == 4
+        assert len(bonds) == 4
         angles = atoms.getAngleIdx()
-        assert angles.nangles == 3
+        assert len(angles) == 3
         dihedrals = atoms.getDihedralIdx()
-        assert dihedrals.ndihedrals == 2
+        assert len(dihedrals) == 2
         
 class TestAtomsSelections:
         

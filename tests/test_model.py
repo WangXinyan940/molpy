@@ -3,8 +3,6 @@
 # date: 2022-01-11
 # version: 0.0.2
 
-# TODO: new model to replace structure array
-
 import pytest
 import numpy as np
 import numpy.testing as npt
