@@ -11,8 +11,11 @@ from molpy.analysis import diffraction, density, cluster
 from numpy.lib import recfunctions as rfn
 import numpy as np
 
-system_name = 'io_40_125_pe_10_20'
-jname = f'tests/samples/mode1/{system_name}/{system_name}'
+pe_lchain = 00
+pe_nchain = 00
+
+system_name = f'io_40_125_pe_{pe_lchain}_{pe_nchain}'
+jname = f'tests/paper/{system_name}/{system_name}'
 
 dataReader = DataReader(f'{jname}.data', atom_style='full')
 dataReader.parse()
@@ -29,46 +32,46 @@ bonds = atoms._topo.getBonds()
 
 nframes = dumpReader.nframes
 
-nframe = 60
+# init calculator
+rdfKernel = density.RDF(bins=200, r_max=24, r_min=0)
+sqKernel = diffraction.StaticStructureFactorDirect(bins=100, k_max=10, k_min=0)
+clusterKernel = cluster.Cluster()
 
-frame = dumpReader.parse(nframe)
-atoms.fromStructuredArray(frame)
+for nframe in [7, 8, 9]:
 
-
-box = dumpReader.box
-box = list(map(float, box))
-box = mp.Box(box[1]-box[0], box[3]-box[2], box[5]-box[4])
-allPos = atoms.position
-
-# setup neighbor list 
-
-# aq = freud.locality.AABBQuery(box=box, points=allPos)
-# query_list = aq.query(allPos, dict(exclude_ii=True, r_max=5))
-# nblist = query_list.toNeighborList()
-
-# using traj
-mols = []
-for molid in range(1, atoms.data['mol'].max()):
-
-    mol = atoms.data[atoms.data['mol'] == molid]
-    mols.append(mol)
-
-nmols = len(mols)
-
-ios = atoms.data[atoms.data['mol'] < 126]
-pes = atoms.data[np.logical_and(126 <= atoms.data['mol'],  atoms.data['mol']< 126+20)]
-counterion = atoms.data[atoms.data['mol']> 146]
+    frame = dumpReader.parse(nframe)
+    atoms.fromStructuredArray(frame)
 
 
-# calc RDF
+    box = dumpReader.box
+    box = list(map(float, box))
+    box = mp.Box(box[1]-box[0], box[3]-box[2], box[5]-box[4])
+    atoms.mergeFields(['x', 'y', 'z'], 'position')
+    fields = atoms.toStructuredArray()
+    
+    io = fields[np.logical_or(fields['type']==1 , fields['type']==3)]
+    
+    io_backbone = fields[fields['type']==1]
+    io_group = fields[fields['type']==3]
+    counterion = fields[fields['type']==4]
 
-freud_rdf = density.RDF(bins=50, r_max=10, r_min=0, normalize=True)
-freud_rdf.compute((box, ios['position']), reset=False)
-    # nomalize
+    io_pos = io['position']
+    io_backbone_pos = io_backbone['position']
+    io_group_pos = io_group['position']
+    counterion_pos = counterion['position']
 
-# bins = freud_rdf.bin_centers
-# rdf = freud_rdf.rdf#  / np.sum(len(ios))
 
+    # calc RDF
+    rdfKernel.compute((box, io_group_pos), query_points=counterion_pos)
+    
+    # np.savetxt('rdf.csv', np.vstack((rdfKernel.bin_centers, rdfKernel.rdf)).T)
+    
+    # # calc sq
+    sqKernel.compute((box, io_pos))
+    # np.savetxt('sq.csv', np.vstack((sqKernel.bin_centers, sqKernel.S_k)).T)
+    # # cluster
+    clusterKernel.compute((box, io_pos), neighbors=dict(r_max=1.5))
+    # np.savetxt('cluster.csv', np.array(list(map(len, clusterKernel.cluster_keys))))
 
 
 # # calc Sq

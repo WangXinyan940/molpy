@@ -58,7 +58,7 @@ class Model:
     
     def mergeFields(self, fields, newField):
         arrs = [self._fields[field] for field in fields]
-        self._fields[newField] = np.vstack(fields).T
+        self._fields[newField] = np.vstack(arrs).T
         return self._fields[newField]
     
     def dropFields(self, fields):

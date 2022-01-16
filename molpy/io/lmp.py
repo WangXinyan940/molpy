@@ -237,7 +237,7 @@ class DumpReader(ReaderTrajBase, LAMMPSIO):
     
     def pre_parse(self):
         isHeader = True
-        frameMetaInfo = self.frameMetaInfo()
+        frameMetaInfo = self.frameMetaInfo
         with open(self.filename) as f:
 
             line = f.readline()

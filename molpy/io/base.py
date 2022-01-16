@@ -53,7 +53,7 @@ class FrameMetaInfo:
 class ReaderTrajBase(ReaderBase):
     
     def __init__(self, filename, **kwargs):
-        super().__init__()
+        super().__init__(filename)
         self.frameMetaInfo = FrameMetaInfo()
         self.index = 0
         
