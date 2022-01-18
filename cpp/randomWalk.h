@@ -1,8 +1,14 @@
 #ifndef RANDOM_WALK_H_
 #define RANDOM_WALK_H_
 
-#include <vector>
-#include <array>
+#include<vector>
+#include<array>
+#include<math.h>
+#include<stdio.h>
+#include<stdlib.h>
+
+using vec4 = std::array<int, 4>;
+using vec3 = std::array<int, 3>;
 
 class RandomWalk {
   public:
@@ -40,12 +46,26 @@ class RandomWalk {
       return;
     }
 
-    std::array<int, 4> findStart();
-    std::array<int, 4> walkOnce(std::array<int, 4>);
+    vec4 findStart();
+    std::array<float, 3> mapSiteToCoord(int);
+    vec4 walkOnce(vec4, int);
+    void findNeighbors(vec4, int, int);
+    void chooseNextStep(vec4, int&, int);
+    void linear(int);
 
   private:
     int MAX_X, MAX_Y, MAX_Z;
-    int**** site, loc_dnes;
-    std::vector<std::array<int, 4>> atom_list;
+    int**** site;
+    int**** loc_dens;
+    int reset;
+    std::vector<vec4> atom_list;
+    int st_ld[12][4];
+    double va[3], vb[3], vc[3];
+    double neigh[12][4], v_store[12][3], mag_store[12];
+    int nn;
+    float sqrt_2_2;
+    float va_mag, vb_mag;
+    vec4 atom;
+
 };
 #endif
