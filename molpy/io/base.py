@@ -23,6 +23,7 @@ class ReaderBase(metaclass=IOMetaClass):
     def __init__(self, filename, **kwargs):
         self.filename = filename
         self.kwargs = kwargs
+        self.pre_parse()
     
     def parse(self, ):
         raise NotImplementedError("Override this in each subclass")
@@ -53,9 +54,9 @@ class FrameMetaInfo:
 class ReaderTrajBase(ReaderBase):
     
     def __init__(self, filename, **kwargs):
-        super().__init__(filename)
         self.frameMetaInfo = FrameMetaInfo()
         self.index = 0
+        super().__init__(filename)
         
     @property
     def start_lino(self):

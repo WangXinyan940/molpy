@@ -74,7 +74,7 @@ class Atoms(Model):
     @property
     def positions(self):
         if 'position' in self._fields:
-            return self.data['position']
+            return self._fields['position']
         elif 'x' in self._fields and 'y' in self._fields and 'z' in self._fields:
             return self.mergeFields(['x', 'y', 'z'], 'position')
         
@@ -108,3 +108,41 @@ class Atoms(Model):
     bondIdx = property(getBondIdx)
     angleIdx = property(getAngleIdx)
     dihedralIdx = property(getDihedralIdx)
+    
+    @property
+    def masses(self):
+        if 'mass' in self._fields or 'masses' in self._fields:
+            mass = self._fields['mass']
+        else:
+            mass = np.ones((len(self.positions)))
+        return mass        
+    
+    def calcCenterOfMass(self):
+        
+        positions = self.positions
+        mass = self.masses
+        assert len(mass) == len(positions), ValueError
+        return np.sum(positions * mass[:, None], axis=0)/self.natoms
+
+    def calcRadiusOfGyration(self, mode='vector'):
+        
+        positions = self.positions
+        mass = self.masses
+        COM = self.calcCenterOfMass()
+        
+        # # get squared distance from center
+        ri_sq = (positions-COM)**2
+        # sum the unweighted positions
+        sq = np.sum(ri_sq, axis=1)
+        sq_x = np.sum(ri_sq[:,[1,2]], axis=1) # sum over y and z
+        sq_y = np.sum(ri_sq[:,[0,2]], axis=1) # sum over x and z
+        sq_z = np.sum(ri_sq[:,[0,1]], axis=1) # sum over x and y
+
+        # make into array
+        sq_rs = np.array([sq, sq_x, sq_y, sq_z])
+
+        # weight positions
+        rog_sq = np.sum(mass*sq_rs, axis=1)/np.sum(mass)
+        # square root and return
+        if mode == 'vector':
+            return np.sqrt(rog_sq[0])
