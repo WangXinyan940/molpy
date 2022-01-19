@@ -4,17 +4,26 @@
 #include<vector>
 #include<array>
 #include<math.h>
-#include<stdio.h>
-#include<stdlib.h>
+#include<cstdio>
 
-using vec4 = std::array<int, 4>;
-using vec3 = std::array<int, 3>;
+#define PI 3.14159265
+#define SQRT22 0.707
+
+using arr4int = std::array<int, 4>;
+using arr3int = std::array<int, 3>;
+using arr4float = std::array<float, 4>;
+using arr3float = std::array<float, 3>;
 
 class RandomWalk {
-  public:
-    // RandomWalk() = default;
-    RandomWalk(int site_x=100, int site_y=100, int site_z=100);
-
+    public:
+        RandomWalk(int nsite_x=100, int nsite_y=100, int nsite_z=100);
+        ~RandomWalk();
+        arr4int findStart();
+        arr3float site2Coord(int);
+        arr4int walkOneStep(arr4int, arr4int);
+        arr4int walkOnce(arr4int, int);
+        arr4int linear(int);
+        arr4int wrapOnSite(arr4int);
 
     template <typename T> T**** create(T****& arr, T x, T y, T z, T m) {
       arr = new T***[x];
@@ -44,28 +53,13 @@ class RandomWalk {
       }
       delete [] arr;
       return;
-    }
-
-    vec4 findStart();
-    std::array<float, 3> mapSiteToCoord(int);
-    vec4 walkOnce(vec4, int);
-    void findNeighbors(vec4, int, int);
-    void chooseNextStep(vec4, int&, int);
-    void linear(int);
-    std::vector<vec4> atom_list;
-
-  private:
-    int MAX_X, MAX_Y, MAX_Z;
-    int**** site;
-    int**** loc_dens;
-    int reset;
-    int st_ld[12][4];
-    double va[3], vb[3], vc[3];
-    double neigh[12][4], v_store[12][3], mag_store[12];
-    int nn;
-    float sqrt_2_2;
-    float va_mag, vb_mag;
-    vec4 atom;
+    }       
+        
+    private:
+        int nsite_x, nsite_y, nsite_z;
+        int**** site;
+        int**** unoccupied_neighbors;
+        std::vector<arr4int> atom_list;
 
 };
 #endif
