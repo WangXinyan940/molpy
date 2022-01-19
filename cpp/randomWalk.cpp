@@ -91,12 +91,13 @@ void RandomWalk::findNeighbors(vec4 center, int n_in_chain, int length)
   int v = n_in_chain;
   int i, j, k, l;
   int ii, jj, kk, mm;
-  int nn_count, nn;
+  int nn_count;
   int dx[3], dy[3], dz[3];
   float angle = 0, d_prod;
   std::array<float, 3> a, aa;
   vec4 atom;
-
+  nn = 0;
+  nn_count = 0;
   i = center[0];
   j = center[1];
   k = center[2];
@@ -213,7 +214,7 @@ void RandomWalk::chooseNextStep(vec4 currentStep, int& n_in_chain, int length) {
                 int k = currentStep[2];
                 int m = currentStep[3];
         
-                if(n_in_chain==0)
+                if(nn==0)
                 {
                   if(reset==1)
                     {
@@ -248,7 +249,7 @@ void RandomWalk::chooseNextStep(vec4 currentStep, int& n_in_chain, int length) {
               else
                 {
                   total_dens=0;
-                  for(int ii=0;ii<n_in_chain;ii++)
+                  for(int ii=0;ii<nn;ii++)
                     {
                       total_dens=total_dens+(12-loc_dens[st_ld[ii][0]][st_ld[ii][1]][st_ld[ii][2]][st_ld[ii][3]]);
 /*
@@ -261,10 +262,10 @@ void RandomWalk::chooseNextStep(vec4 currentStep, int& n_in_chain, int length) {
 /*
                   prob_high=prob_high+(6-snd_dens[st_ld[0][0]][st_ld[0][1]][st_ld[0][2]][st_ld[0][3]]);
 */
-                  printf("span %d prob_high %d prob_low %d point %d\n",prob_high-prob_low,prob_high,prob_low,point);
-                  printf("0 %d 1 %d 2 %d 3 %d \n",st_ld[0][0],st_ld[0][1],st_ld[0][2],st_ld[0][3]);
-                  printf("site %d\n",site[st_ld[0][0]][st_ld[0][1]][st_ld[0][2]][st_ld[0][3]]);
-                  for(int ii=0;ii<n_in_chain;ii++)
+                  // printf("span %d prob_high %d prob_low %d point %d\n",prob_high-prob_low,prob_high,prob_low,point);
+                  // printf("0 %d 1 %d 2 %d 3 %d \n",st_ld[0][0],st_ld[0][1],st_ld[0][2],st_ld[0][3]);
+                  // printf("site %d\n",site[st_ld[0][0]][st_ld[0][1]][st_ld[0][2]][st_ld[0][3]]);
+                  for(int ii=0;ii<nn;ii++)
                     {
                       if(point>=prob_low&&point<prob_high)
                         {
@@ -276,8 +277,9 @@ void RandomWalk::chooseNextStep(vec4 currentStep, int& n_in_chain, int length) {
                           atom[1] = j;
                           atom[2] = k;
                           atom[3] = m;
+                          atom_list.push_back(atom);
                           site[i][j][k][m]=1;
-                          n_in_chain++;             
+                          // natom++;             
 
                       /*store the previous vector*/
                           vc[0]=vb[0];
@@ -287,12 +289,12 @@ void RandomWalk::chooseNextStep(vec4 currentStep, int& n_in_chain, int length) {
                           vb[1]=-v_store[ii][1];
                           vb[2]=-v_store[ii][2];
                           vb_mag=mag_store[ii];
-                          ii=n_in_chain;
+                          ii=nn;
                           reset=0;
                         }
                       else
                         {
-                          if(ii==n_in_chain-1)
+                          if(ii==nn-1)
                             {
                               if(reset==1)
                                 {
@@ -304,11 +306,13 @@ void RandomWalk::chooseNextStep(vec4 currentStep, int& n_in_chain, int length) {
                                printf("resetting\n");           
                                reset=1;
                                site[i][j][k][m]=2;
-                               atom = atom_list.back();
+                  
                   i = atom[0];
                   j = atom[1];
                   k = atom[2];
                   m = atom[3];
+                  atom_list.pop_back();
+                  atom_list.push_back(atom);
                                for(ii=0;ii<12;ii++)
                                  {
                                    loc_dens[st_ld[ii][0]][st_ld[ii][1]][st_ld[ii][2]][st_ld[ii][3]]--;
@@ -322,7 +326,7 @@ void RandomWalk::chooseNextStep(vec4 currentStep, int& n_in_chain, int length) {
                                vb[0]=vc[0];
                                vb[1]=vc[1];
                                vb[2]=vc[2];
-                               ii=n_in_chain;
+                               ii=nn;
                                n_in_chain=n_in_chain-2;
                             }
                           else
@@ -344,4 +348,7 @@ int main()
   // RandomWalk* rw = new RandomWalk(10, 20, 30);
   RandomWalk rw = RandomWalk();
   rw.linear(10);
+  for (auto it=rw.atom_list.cbegin(); it != rw.atom_list.cend(); it++) {
+    printf("(%d, %d, %d, %d)\n", it[0], it[1], it[2], it[3]);
+  }
 }
