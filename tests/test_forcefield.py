@@ -5,6 +5,8 @@
 
 import pytest
 from molpy.forcefield import ForceField
+import molpy as mp
+import numpy as np
 
 class TestForceField:
     
@@ -12,25 +14,42 @@ class TestForceField:
     def test_init(self):
         
         ff = ForceField()
-        at1 = ff.defAtomType('at1', 'atcA', dict(charge=0.123, mass=1.234))
-        at2 = ff.defAtomType('at2', 'atcA', dict(charge=0.234, mass=2.345))
-        at3 = ff.defAtomType('at3', 'atcA', dict(charge=0.234, mass=2.345))
-        at4 = ff.defAtomType('at4', 'atcA', dict(charge=0.234, mass=2.345))
+        at1 = ff.defAtomType('at1', charge=0.123, mass=1.234)
+        at1.queryFunc = lambda x: x['type'] == 'at1'
+        at2 = ff.defAtomType('at2', charge=0.234, mass=2.345)
+        at2.queryFunc = lambda x: x['type'] == 'at2'
+
+        # at3 = ff.defAtomType('at3', charge=0.234, mass=2.345)
+        # at4 = ff.defAtomType('at4', charge=0.234, mass=2.345)
         
-        bt1 = ff.defBondType('bt1', at1, at1, 'btcA', dict(length=1.53, k=0.8))
-        bt1 = ff.defBondType('bt2', at1, at2, 'btcA', dict(length=1.53, k=0.8))
-        bt1 = ff.defBondType('bt3', at2, at2, 'btcA', dict(length=1.53, k=0.8))
+        bt1 = ff.defBondType('bt1', length=1.53, k=0.8)
+        def f(x):
+            b1 = x[0]['type'] == 'at1'
+            b2 = x[1]['type'] == 'at1'
+            return b1 and b2
+        # bt1.queryFunc = lambda x: x[0]['type'] == 'at1' and x[1]['type'] == 'at1'
+        bt1.queryFunc = f
+        bt2 = ff.defBondType('bt2', length=1.53, k=0.8)
+        bt2.queryFunc = lambda x: (x[0]['type'] == 'at1' and x[1]['type'] == 'at2') or (x[0]['type'] == 'at2' and x[1]['type'] == 'at1')
+        bt3 = ff.defBondType('bt3', length=1.53, k=0.8)
+        bt3.queryFunc = lambda x: x[0]['type'] == 'at2' and x[1]['type'] == 'at2'
+
+        pr1 = ff.defPairType('pr1', sigma=0.4, epsilon=4)
+        pr1.queryFunc = lambda x: True
         
         yield ff
         
-    def test_match_atomtype_of_atoms(self, ff, atoms):
+    def test_query_atomtypes(self, ff, atoms):
         
-        atoms = ff.matchAtomTypeOfAtoms(atoms, field='type', ref='name')
-        assert 'atomType' in atoms.fields
+        atomTypes = ff.queryAtomTypes(atoms)
+
     
-    def test_match_bondtype_of_atoms(self, ff, atoms):
-        if 'atomType' not in atoms:
-            atoms = ff.matchAtomTypeOfAtoms(atoms, field='type', ref='name')
-        atoms = ff.matchBondTypeOfAtoms(atoms)
+    def test_query_bondTypes(self, ff, atoms):
+
+        bondTypes = ff.queryBondTypes(atoms)
         
+    def test_query_pairTypes(self, ff, atoms):
+
+        box = mp.Box.cube(10)
+        pairTypes = ff.queryPairTypes(atoms, box, 4)
         
