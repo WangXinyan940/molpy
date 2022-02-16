@@ -20,14 +20,6 @@ class TestAtoms:
         assert len(atomInstances) == atoms.natoms
         assert atomInstances[0].id == 0
         
-    def test_init_topo(self, atoms):
-        bonds = atoms.getBondIdx()
-        assert len(bonds) == 4
-        angles = atoms.getAngleIdx()
-        assert len(angles) == 3
-        dihedrals = atoms.getDihedralIdx()
-        assert len(dihedrals) == 2
-        
     def test_calc_center_of_mass(self):
         
         positions = np.zeros((6, 3))

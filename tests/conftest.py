@@ -10,7 +10,7 @@ from molpy.atoms import Atoms
 natoms = 5
 @pytest.fixture(scope='module', name='atoms')
 def test_init():
-    atoms = Atoms(5, dict(id=np.arange(natoms), mol=np.array([0, 0, 1, 1, 2]), type=np.array(['at1', 'at1', 'at2', 'at1', 'at2']), position=np.random.random((natoms, 3))*10), connection=[[0, 1], [1, 2], [2, 3], [3, 4]])
+    atoms = Atoms(5, dict(id=np.arange(natoms), mol=np.array([0, 0, 1, 1, 2]), type=np.array(['at1', 'at1', 'at2', 'at1', 'at2']), position=np.random.random((natoms, 3))*10))
     assert 'id' in atoms.fields
     assert 'mol' in atoms.fields
     assert atoms.natoms == 5

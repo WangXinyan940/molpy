@@ -19,7 +19,7 @@ class TestTopoWithoutAtom:
             4: [3]
         }
         
-        topo = Topo(rawTopo)
+        topo = Topo(connection=rawTopo)
         yield topo
         
     def test_get_bonds(self, topo):
@@ -41,7 +41,8 @@ class TestTopoWithAtom:
             4: [3]
         }
         
-        topo = Topo(connection=connection)
+        topo = Topo(atoms, connection=connection)
+        assert len(topo.adjList) == 8
         topo.setAtoms(atoms)
         yield topo
         

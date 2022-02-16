@@ -152,7 +152,7 @@ class DataReader(ReaderBase, LAMMPSIO):
             raise KeyError("Data file was missing Atoms section")
         
         if 'Bonds' in sections:
-            self.bonds = self._parse_bonds(sections['Bonds'])
+            self.bonds, self.bondTypes = self._parse_bonds(sections['Bonds'])
             
 
     def _parse_vel(self, datalines, order):
@@ -182,7 +182,7 @@ class DataReader(ReaderBase, LAMMPSIO):
 
         m = map(lambda x: x.split(), datalines)
         bondArr = np.array(list(m), int)
-        return bondArr[:, [2, 3, 1]]  # [atom1, atom2, bondtype]
+        return bondArr[:, [2, 3]].tolist(), bondArr[:, [1]].tolist()
 
     def _parse_atoms(self, datalines, fields, formats, massdict=None):
 
@@ -264,9 +264,11 @@ class DumpReader(ReaderTrajBase, LAMMPSIO):
         self.frameMetaInfo = frameMetaInfo
         
     def parse(self, frame):
-        self.index = frame
         if not isinstance(frame, int):
             raise TypeError
+        if frame > len(self.frameMetaInfo.start_byte):
+            raise ValueError(f'frame length is {len(self.frameMetaInfo.start_byte)}')
+        self.index = frame
         
         start_byte = self.frameMetaInfo.start_byte[frame]
         end_btyte = self.frameMetaInfo.start_byte[frame+1]

@@ -5,6 +5,7 @@
 
 from collections import defaultdict
 from itertools import combinations
+import jax.numpy as jnp
 
 from .angle import Angles
 from .bond import Bonds
@@ -13,19 +14,25 @@ from .dihedral import Dihedrals
 
 class Topo:
     
-    def __init__(self, connection=None, atoms=None):
+    def __init__(self, atoms=None, connection=None):
         
         self.reset()
-        
-        if connection is not None:
-            if isinstance(connection, dict):
-                self.setConnection(connection)
-            elif isinstance(connection, (list, tuple)):
-                self.constructConnectionFromBonds(connection)
+        self.loadTopo(connection)
         
         if atoms is not None: 
             self.setAtoms(atoms)
 
+    @property
+    def adjDict(self):
+        return self._adjDict
+
+    @property
+    def adjList(self):
+        return self._adjList
+
+    @property
+    def adjMatrix(self):
+        pass
 
     def reset(self):
         self._atoms = None
@@ -45,27 +52,39 @@ class Topo:
                 self._atoms = atoms.getAtoms()
                 
         self._hasAtom = True
-                
         
-    def setConnection(self, connection):
-        self._connection = connection
-        self.reset()
+    def loadTopo(self, connection):
+        if connection is not None:
+            if isinstance(connection, dict):
+                adjDict, adjList, adjMatrix = self.__class__.validAdjDict(connection)
+            elif isinstance(connection, (list, tuple)):
+                adjDict, adjList, adjMatrix = self.__class__.validAdjList(connection)
+            else:
+                raise TypeError
+            self._adjDict = adjDict
+            self._adjList = adjList
+            self._adjMatrix = adjMatrix
+
+    @staticmethod
+    def validAdjDict(conect):
+        
+        return conect, [[c, p] for c, ps in conect.items() for p in ps], None
     
-    def constructConnectionFromBonds(self, bonds):
+    @staticmethod
+    def validAdjList(conect):
 
         connection = defaultdict(list)
-        for bond in bonds:
+        for bond in conect:
             connection[bond[0]].append(bond[1])
             connection[bond[1]].append(bond[0])
-        self._connection = dict(connection)
-        self.reset()
+        return dict(connection), conect, None
         
     def getBonds(self):
         
         if self._hasBond:
             return self._bonds
         
-        topo = self._connection
+        topo = self._adjDict
         rawBonds = []
         for c, ps in topo.items():
             for p in ps:
@@ -79,7 +98,7 @@ class Topo:
         if self._hasAngle:
             return self._angles
 
-        topo = self._connection
+        topo = self._adjDict
         rawAngles = []
         for c, ps in topo.items():
             if len(ps) < 2:
@@ -94,7 +113,7 @@ class Topo:
         if self._hasDihedral:
             return self._dihedrals
      
-        topo = self._connection
+        topo = self._adjDict
         rawDihes = []
         for jtom, ps in topo.items():
             if len(ps) < 2:
@@ -129,3 +148,34 @@ class Topo:
     bondIdx = property(getBondIdx)
     angleIdx = property(getAngleIdx)
     dihedralIdx = property(getDihedralIdx)
+
+    def doEmbedding(self):
+
+        node_features = self._atoms.doEmbedding()
+        jnpAdjList = jnp.array(self.adjList)
+        senders = jnpAdjList[:, 0]
+        receivers = jnpAdjList[:, 1]
+
+        # edge_features = 
+
+        # You can optionally add edge attributes to the 5 edges.
+        edges = jnp.array([[5.], [6.], [7.], [8.], [8.]])
+
+        # We then save the number of nodes and the number of edges.
+        # This information is used to make running GNNs over multiple graphs
+        # in a GraphsTuple possible.
+        n_node = jnp.array([4])
+        n_edge = jnp.array([5])
+
+        # Optionally you can add `global` information, such as a graph label.
+        global_context = jnp.array([[1]]) # Same feature dims as nodes and edges.
+        graph = jraph.GraphsTuple(
+            nodes=node_features,
+            edges=edges,
+            senders=senders,
+            receivers=receivers,
+            n_node=n_node,
+            n_edge=n_edge,
+            globals=global_context
+            )
+        return graph        

@@ -67,9 +67,9 @@ class Model:
         
         for field in fields.values():
             if hasattr(field, 'shape') and (field.shape[0] != self._n):
-                raise ValueError
+                raise ValueError(f'append field {field}\'s shape {field.shape} not match {self._n}')
             elif isinstance(field, (list, tuple)) and (len(field) != self._n):
-                raise ValueError
+                raise ValueError(f'append field {field}\'s shape {len(field)} not match {self._n}')
         
         self._fields.update(fields)
             

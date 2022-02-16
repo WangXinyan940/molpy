@@ -10,7 +10,7 @@ import numpy as np
 
 class Atoms(Model):
     
-    def __init__(self, natoms=None, data:dict=None, fromAtoms=None, connection=None):
+    def __init__(self, natoms=None, data:dict=None, fromAtoms=None):
         
         super().__init__(natoms)
         if data is not None:
@@ -21,9 +21,6 @@ class Atoms(Model):
             elif isinstance(fromAtoms, np.ndarray):
                 for name in fromAtoms.dtype.names:
                     self._fields[name] = fromAtoms[name]
-        
-        # this must be the last one be initialize   
-        self._topo = Topo(connection, self)
     
     @property
     def natoms(self):
@@ -78,36 +75,36 @@ class Atoms(Model):
         elif 'x' in self._fields and 'y' in self._fields and 'z' in self._fields:
             return self.mergeFields(['x', 'y', 'z'], 'position')
         
-    def calcRadiusOfGyration(self):
-        pass
+    # def calcRadiusOfGyration(self):
+    #     pass
     
-    def calcCenterOfMass(self):
-        pass
+    # def calcCenterOfMass(self):
+    #     pass
     
-    def getBonds(self):
-        return self._topo.bonds
+    # def getBonds(self):
+    #     return self._topo.bonds
     
-    def getBondIdx(self):
-        return self._topo.bondIdx
+    # def getBondIdx(self):
+    #     return self._topo.bondIdx
     
-    def getAngles(self):
-        return self._topo.angles
+    # def getAngles(self):
+    #     return self._topo.angles
     
-    def getAngleIdx(self):
-        return self._topo.angleIdx
+    # def getAngleIdx(self):
+    #     return self._topo.angleIdx
     
-    def getDihedrals(self):
-        return self._topo.dihedrals
+    # def getDihedrals(self):
+    #     return self._topo.dihedrals
     
-    def getDihedralIdx(self):
-        return self._topo.dihedralIdx
+    # def getDihedralIdx(self):
+    #     return self._topo.dihedralIdx
     
-    bonds = property(getBonds)
-    angles = property(getAngles)
-    dihedrals = property(getDihedrals)
-    bondIdx = property(getBondIdx)
-    angleIdx = property(getAngleIdx)
-    dihedralIdx = property(getDihedralIdx)
+    # bonds = property(getBonds)
+    # angles = property(getAngles)
+    # dihedrals = property(getDihedrals)
+    # bondIdx = property(getBondIdx)
+    # angleIdx = property(getAngleIdx)
+    # dihedralIdx = property(getDihedralIdx)
     
     @property
     def masses(self):
@@ -146,3 +143,7 @@ class Atoms(Model):
         # square root and return
         if mode == 'vector':
             return np.sqrt(rog_sq[0])
+
+    def embed(self):
+        struct = self.toStructuredArray()
+        

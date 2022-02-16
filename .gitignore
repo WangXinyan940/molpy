@@ -7,9 +7,12 @@
 *.test
 *.data
 *.dump
+*.zip
 gen*
 paper/
 mpidwater.xml
+analysis3.py
+cpp/*
 
 # test data
 samples/

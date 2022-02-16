@@ -3,8 +3,10 @@
 # date: 2022-01-05
 # version: 0.0.2
 
+
 from molpy.atoms import Atoms
 from molpy.io.lmp import DataReader, DumpReader
+from molpy.topo import Topo
 from .box import Box
 
 class System:
@@ -12,9 +14,25 @@ class System:
     def __init__(self):
         
         self._atoms = None
-        self._topo = None
+        self._topo = Topo(self._atoms)
         self._box = None
         self._forcefield = None
+        
+    @property
+    def atoms(self):
+        return self._atoms
+    
+    @property
+    def topo(self):
+        return self._topo
+    
+    @property
+    def box(self):
+        return self._box
+    
+    @property
+    def forcefield(self):
+        return self._forcefield
         
     def getAtoms(self):
         return self.data.getAtoms()
@@ -39,10 +57,8 @@ class System:
     def loadAtoms(self, atomData, bondData):
         atoms = Atoms(len(atomData), fromAtoms=atomData)
         atoms.fromStructuredArray(atomData)
-        atoms._topo.constructConnectionFromBonds(bondData)
+        self._topo.loadTopo(bondData)
         self._atoms = atoms
-        
-
         
     def loadTraj(self, dumpFile):
         
@@ -59,6 +75,6 @@ class System:
         box = list(map(float, box))
         self._box = Box(box[1]-box[0], box[3]-box[2], box[5]-box[4])
         
-    def getAtomsWithStructuredArray(self):
+    def getAtomsStructuredArray(self):
         return self._atoms.toStructuredArray()
         
