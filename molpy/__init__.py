@@ -9,4 +9,4 @@ from . import (
 from .box import Box
 from .system import System
 from .neighborlist import NeighborList
-from .analysis import AnalysisQueue, Analyzer
+from .analysis import AnalysisManagement, Analyzer
