@@ -10,14 +10,19 @@ import multiprocessing as mp
 
 class Analyzer:
     
-    def __init__(self):
+    def __init__(self, name):
         """ initialize an analyzer. generally including setting the path of data, loading data or invoking __post_init__
         """
-        pass
+        self._name = name
+        self._data = {}
     
     @property
     def name(self):
         return self._name if getattr(self, '_name') else id(self)
+    
+    @property
+    def data(self):
+        return self._data
     
     def __post_init__(self):
         """ initialize computing kernel
@@ -67,20 +72,28 @@ class AnalysisManagement:
         print('exit safely')
         
     def addTask(self, analyzer, args:Iterable=(), kwargs:dict={}, callback:Callable[[Any],Any]=None, err_callback:Callable[[Exception],Any]=None):
-        task = self.pool.apply_async(analyzer.start, args, kwargs, callback, err_callback)
-        self.tasks[analyzer.name] = task
         
-    def retrive(self):
+        if getattr(analyzer, 'start', None) is None:
+            raise AttributeError
+        
+        task_flag = self.pool.apply_async(analyzer.start, args, kwargs, callback, err_callback)
+        self.tasks[analyzer.name] = (analyzer, task_flag)
+        
+    def retrive(self, block=True):
 
         analyzers = []
-        tasks = list(self.tasks.keys())
+        tasks = self.tasks.keys()
+        if block:
+            # before join(), must close()
+            # and no more tasks can be added
+            self.pool.close()
+            self.pool.join()
+            
         for taskname in tasks:
-            task = self.tasks[taskname]
-            if task.ready():
+            ana, task_flag = self.tasks[taskname]
+            if task_flag.ready():
                 print(f'{taskname} ready')
-                self.tasks.pop(taskname)
-                analyzer = task.get()
-                analyzers.append(analyzer)
+                analyzers.append(ana)
             else:
                 print(f'{taskname} is not ready')
         return analyzers

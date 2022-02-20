@@ -3,28 +3,52 @@
 # date: 2022-02-17
 # version: 0.0.1
 
+from typing import Iterable
 import numpy as np
-
+from functools import partial, reduce
 
 class Accumulator:
     
-    def __init__(self, name, op, init_value=None) -> None:
-        self._name = name
-        self.data = init_value
+    def __init__(self, op, name, init_value=None):
+        self.name = name
         self.op = op
+        self.value = init_value
         
     def __call__(self, X, op=None):
         
-        Xarr = np.array(X)
-        if op is None:
-            op = self.op
+        if self.value is None:
+            self.value = X
+            return self
         
-        if self.data is None:
-            self.data = Xarr
         else:
-            if op == 'add':
-                self.data += Xarr
-            elif op == 'mul':
-                self.data *= Xarr
+            if op is None:
+                p_op = partial(self.op, self.value)
+            else:
+                p_op = partial(op, self.value)
+                
+            self.value = p_op(X)
+            return self
+
+    def __repr__(self) -> str:
+        return f'< Accumulator {self.name} >'
+    
+class Reducer:
+    
+    def __init__(self, op, name, init_value=None) :
         
-        return self.data
+        self.name = name 
+        self.op = op
+        self.value = init_value
+        
+    def __call__(self, X:Iterable):
+        iterator = iter(X)
+        if self.value is None:
+            self.value = next(iterator)
+        
+        op = self.op
+        self.value = reduce(op, iterator, self.value)
+        return self
+    
+    def __repr__(self) -> str:
+        return f' < Reducer {self.name} > '
+            
