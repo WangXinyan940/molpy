@@ -13,6 +13,7 @@ paper/
 mpidwater.xml
 analysis3.py
 cpp/*
+*.txt
 
 # test data
 samples/

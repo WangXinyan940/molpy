@@ -1,42 +1,65 @@
+from operator import add
 from multiprocessing import Pool
 import numpy as np
 from time import sleep, time
+import multiprocessing as mp
+from freud import density
+from freud.box import Box
 
-def f(X):
-    if X[0] == 3:
-        raise ValueError
-        # return 'err'
-    sleep(3)
-    return X**2
+# from molpy.analysis.utils import Accumulator
 
-
-
+class Management:
+    
+    def __init__(self) -> None:
+        self.np = 4
+        self.pool = mp.Pool(self.np)
+        
+    def addTask1(self, func):
+        
+        task = self.pool.apply_async(func)
+        return task
+        
+    def addTask2(self, class_, *args):
+        
+        def worker():
+            ins = class_(*args)  
+            print(f'init: {id(ins)}')
+            return ins
+        
+        callback = lambda x: print(id(x))
+            
+        task = self.pool.apply_async(worker, callback=callback)
+        
+        return task
+    
+class Mock:
+    
+    def __init__(self, positions) -> None:
+        
+        self.positions = positions
+        self.data = {}
+        
+    def start(self):
+        
+        self.rdfKernel = density.RDF(bins=200, r_max=4, r_min=0)
+        self.rdfKernel.compute((Box.cube(10), self.positions))
+        self.data['rdf'] = self.rdfKernel.rdf
+        # self.accu = Accumulator(add, 'test')
+        # self.accu(1)
+        # self.accu(2)
+        delattr(self, 'rdfKernel')
+        
+        return self
+        
 if __name__ == '__main__':
-    results = []
-    start = time()
-    with Pool(5) as p:
+    
+    ma = Management()
+    
+    mo = Mock(np.random.random((10, 3))*10)
 
-        # results.append(p.apply_async(f, np.arange(15).reshape((5,3)), 1, lambda x: f'ans: {x}', lambda e: print('err')))
-        for i in np.arange(15).reshape((5,3)):
-            a = p.apply_async(f, (i, ))
-            results.append(a)
-            sleep(4)
-            print(a.ready())
-        
-        for res in results:
-            print(res.ready())
-        p.join()
-        
-    end = time()
-    print(end-start)
-
-    ans = []
-    for res in results:
- 
-        print(res.ready())
-        try:
-            a = res.get()
-            ans.append(a)
-        except:
-            ans.append('err')
-    print(ans)
+    result = ma.addTask1(mo.start)
+    ma.pool.close()
+    ma.pool.join()
+    mo_ = result.get()
+    print(mo_.data['rdf'])
+    

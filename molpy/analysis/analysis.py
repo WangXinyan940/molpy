@@ -3,10 +3,11 @@
 # date: 2022-01-07
 # version: 0.0.1
 
-from typing import Any, Callable, Iterable, Literal
-from tqdm import tqdm
-import numpy as np
+from functools import partial
+from multiprocessing.pool import AsyncResult
+from typing import Any, Callable, Iterable, Literal, Mapping
 import multiprocessing as mp
+
 
 class Analyzer:
     
@@ -14,88 +15,84 @@ class Analyzer:
         """ initialize an analyzer. generally including setting the path of data, loading data or invoking __post_init__
         """
         self._name = name
-        self._data = {}
     
     @property
     def name(self):
         return self._name if getattr(self, '_name') else id(self)
     
-    @property
-    def data(self):
-        return self._data
-    
-    def __post_init__(self):
-        """ initialize computing kernel
-        """
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
         raise NotImplementedError
     
-    def open(self):
-        """ how to load data
-        """
-        raise NotImplementedError
+    def __eq__(self, o):
+        return id(self) == id(o)
     
-    def before(self):
-        """ not decide yet
-        """
-        raise NotImplementedError
+    def __hash__(self) -> int:
+        return id(self)
     
-    def start(self):
-        """ start to analysis each frame
-        """
-        raise NotImplementedError
-    
-    def after(self):
-        """ dump data etc.
-        """
-        raise NotImplementedError
-    
-    def one(self):
-        """how to compute one frame
-        """
-        raise NotImplementedError
+    def defKernel(self, name, kernel, ):
         
-    def dump(self):
-        pass
+        self._kernel = {'name': kernel}
+        setattr(self, name, kernel)
+        return kernel
+    
+    def delKernel(self, name=None):
+        if name is None:
+            for key in self._kernel:
+                delattr(self, key)
+            delattr(self, '_kernel')
+        else:
+            delattr(self, name)
+            self._kernel.pop(name)
 
 
-class AnalysisManagement:
+class AnalysisTaskManagement:
     
-    def __init__(self, np=mp.cpu_count(), timeout=None):
+    def __init__(self, nprocessors=mp.cpu_count(), timeout=None):
         
-        self.np = np
-        self.pool = mp.Pool(self.np)
+        self.nprocessors = nprocessors
+        self._pool = None
         self.tasks = {}
-        self.timeout = float(timeout) if timeout is not None else timeout
+        self.lauch()
+        
+    def lauch(self, nprocessors=None):
+        
+        if nprocessors is None:
+            nprocessors = self.nprocessors
+        self._pool = mp.Pool(nprocessors)
+        
+    def terminate(self):
+        self._pool.terminate()
         
     def __del__(self):
-        self.pool.terminate()
-        print('exit safely')
+        self.terminate()
         
-    def addTask(self, analyzer, args:Iterable=(), kwargs:dict={}, callback:Callable[[Any],Any]=None, err_callback:Callable[[Exception],Any]=None):
+    def newTask(self, analyzer:Analyzer, args:Iterable=(), kwargs:Mapping={}, callback:Callable[[Analyzer], None]=None, err_callback:Callable[[BaseException], None]=None) -> AsyncResult:
         
-        if getattr(analyzer, 'start', None) is None:
-            raise AttributeError
+        task = self._pool.apply_async(analyzer, args, kwargs, callback, err_callback) 
+        self.tasks[analyzer.name] = task
+        return task
+    
+    def getTaskConstructor(self, analyzer:Analyzer, callback:Callable[[Analyzer], None]=None, err_callback:Callable[[BaseException], None]=None) -> Callable[[Iterable, Mapping], Callable]:
         
-        task_flag = self.pool.apply_async(analyzer.start, args, kwargs, callback, err_callback)
-        self.tasks[analyzer.name] = (analyzer, task_flag)
+        return partial(self.newTask, analyzer, callback=callback, err_callback=err_callback)
+    
+    def retrive(self, block=True) -> Mapping:
         
-    def retrive(self, block=True):
-
-        analyzers = []
-        tasks = self.tasks.keys()
         if block:
-            # before join(), must close()
-            # and no more tasks can be added
-            self.pool.close()
-            self.pool.join()
+            self._pool.close()
+            self._pool.join()
             
-        for taskname in tasks:
-            ana, task_flag = self.tasks[taskname]
-            if task_flag.ready():
-                print(f'{taskname} ready')
-                analyzers.append(ana)
+        tmp = {}
+        task_list = [name for name in self.tasks.keys()]
+        for taskName in task_list:
+            task = self.tasks[taskName]
+            if task.ready():
+                tmp[taskName] = task.get()
+                self.tasks.pop(taskName)
             else:
-                print(f'{taskname} is not ready')
-        return analyzers
+                pass
         
+        return tmp
+    
+    
     

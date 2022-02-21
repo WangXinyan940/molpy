@@ -1,4 +1,4 @@
-from .analysis import Analyzer, AnalysisManagement
+from .analysis import Analyzer, AnalysisTaskManagement
 from freud import (
     cluster,
     data,
