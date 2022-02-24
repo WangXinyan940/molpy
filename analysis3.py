@@ -7,6 +7,7 @@ from tqdm import tqdm
 import csv
 from molpy.analysis.analysis import AnalysisTaskManagement, Analyzer
 from molpy.analysis.utils import Accumulator
+from molpy.box import Box
 
 from molpy.utils import PathUtils
 from pathlib import Path
@@ -15,27 +16,22 @@ class PaperAnalyzer(Analyzer):
     
     def __init__(self, name, path, isSave=False):
         super().__init__(name)
-        self._name = name
         if isinstance(path, Path):
             self._dataDir = path
         else:
             self._dataDir = Path(path)
         self.isSave = isSave
-        self.__post_init__()
+        self.data = {}
         
-    def __post_init__(self):
-        # init kernel
-
-        # calc group-ion
-        self.rdfKernel0 = density.RDF(bins=200, r_max=24, r_min=0)
-        # calc 
-        self.rdfKernel1 = density.RDF(bins=200, r_max=24, r_min=0)
-        # calc
-        self.rdfKernel2 = density.RDF(bins=200, r_max=24, r_min=0)
-
-        self.sqKernel = diffraction.StaticStructureFactorDirect(bins=100, k_max=10, k_min=0)
-        self.clusterKernel = cluster.Cluster()   
-        self.cl_props = cluster.ClusterProperties()
+    def before(self):
+        
+        self.defKernel('rdfKernel0', density.RDF(bins=200, r_max=24, r_min=0))
+        self.defKernel('rdfKernel1', density.RDF(bins=200, r_max=24, r_min=0))
+        self.defKernel('rdfKernel2', density.RDF(bins=200, r_max=24, r_min=0))
+        
+        self.defKernel('sqKernel', diffraction.StaticStructureFactorDirect(bins=100, k_max=10, k_min=0))
+        self.defKernel('clusterKernel', cluster.Cluster())
+        self.defKernel('clProps', cluster.ClusterProperties())
         
         add_accumulator = partial(Accumulator, add)
         self.gyration_tensor_acc = add_accumulator('gy_tensor')
@@ -51,7 +47,7 @@ class PaperAnalyzer(Analyzer):
     def open(self):
         dataName = Path(self._dataDir.stem)
         
-        self.system = mp.System()
+        self.defKernel('system', mp.System())
         try:
             self.system.loadData(self._dataDir/dataName.with_suffix('.data'))        
             self.system.loadTraj(self._dataDir/dataName.with_suffix('.dump'))
@@ -93,17 +89,17 @@ class PaperAnalyzer(Analyzer):
         # cluster
         self.clusterKernel.compute((box, io_backbone_pos), neighbors=dict(r_max=1.5))
         
-        self.cl_props.compute((box, io_backbone_pos), self.clusterKernel.cluster_idx, )
-        COM = self.cl_props.centers
+        self.clProps.compute((box, io_backbone_pos), self.clusterKernel.cluster_idx, )
+        COM = self.clProps.centers
 
         self.rdfKernel1.compute((box, COM), query_points=io_backbone_pos, reset=False)  # COM-io
 
         self.rdfKernel2.compute((box, COM), query_points=pe_pos, reset=False)  # COM-pe
         
-        self.gyration_tensor_acc(self.cl_props.gyrations)
-        self.rg_acc(self.cl_props.radii_of_gyration)
-        self.asphericity_acc(self.cl_props.asphericity)
-        self.prolateness_acc(self.cl_props.prolateness)
+        self.gyration_tensor_acc(self.clProps.gyrations)
+        self.rg_acc(self.clProps.radii_of_gyration)
+        self.asphericity_acc(self.clProps.asphericity)
+        self.prolateness_acc(self.clProps.prolateness)
         
     def after(self):
         
@@ -114,31 +110,28 @@ class PaperAnalyzer(Analyzer):
         # self.sqKernel.compute((box, io_pos), reset=True)
         
         self.clusterKernel.compute((box, io_pos), neighbors=dict(r_max=1.5))
-        self.cl_props.compute((box, io_pos), self.clusterKernel.cluster_idx)
+        self.clProps.compute((box, io_pos), self.clusterKernel.cluster_idx)
         
         # single value
         self.data['test'] = 'test'
-        self.data['gyration_tensor'] = self.cl_props.gyrations
-        self.data['Rg'] = self.cl_props.radii_of_gyration
-        self.data['asphericity'] = self.cl_props.asphericity
-        self.data['prolateness'] = self.cl_props.prolateness
+        self.data['gyration_tensor'] = self.clProps.gyrations
+        self.data['Rg'] = self.clProps.radii_of_gyration
+        self.data['asphericity'] = self.clProps.asphericity
+        self.data['prolateness'] = self.clProps.prolateness
         self.data['size'] = np.array(list(map(len, self.clusterKernel.cluster_keys)))
         self.data['num_cluster'] = self.clusterKernel.num_clusters
         
-        delattr(self, 'rdfKernel0')
-        delattr(self, 'rdfKernel1')
-        delattr(self, 'rdfKernel2')
-        delattr(self, 'cl_props')
-        delattr(self, 'clusterKernel')
-        delattr(self, 'sqKernel')
+        self.delKernel()
   
     def start(self):
 
         self.open()
         self.check()
-        # self.before()
+        self.before()
         self.ensemble_average()
         self.after()
+
+        return self
 
     def __call__(self, *args, **kwds):
         self.start()
@@ -160,13 +153,13 @@ if __name__ == '__main__':
         a = PaperAnalyzer(f"{test_sample.stem}", test_sample, isSave=True)
         am.newTask(a, )
     
-    analyzers = am.retrive(block=True)
+    analyzers:dict = am.retrive(block=True)
     
     save = True
     if save:
         header = []
         for analyzer in analyzers:
-            header.append(analyzer.name)
+            header.append(analyzer)
         # single value
         gyraion_tensor = []
         rg = []
@@ -174,8 +167,8 @@ if __name__ == '__main__':
         prolatenesss = []
         size = []
         for analyzer in analyzers:
-            
-            print(analyzer.gyration_tensor_acc.value)
+            pass
+            # print(analyzer.gyration_tensor_acc.value)
             
             # gyraion_tensor.append(analyzer.data['gyration_tensor'])
             # rg.append(analyzer.data['Rg'])

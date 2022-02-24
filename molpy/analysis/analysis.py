@@ -15,6 +15,7 @@ class Analyzer:
         """ initialize an analyzer. generally including setting the path of data, loading data or invoking __post_init__
         """
         self._name = name
+        self._kernel = {}
     
     @property
     def name(self):
@@ -31,7 +32,7 @@ class Analyzer:
     
     def defKernel(self, name, kernel, ):
         
-        self._kernel = {'name': kernel}
+        self._kernel[name] = kernel
         setattr(self, name, kernel)
         return kernel
     

@@ -6,7 +6,7 @@ import multiprocessing as mp
 from freud import density
 from freud.box import Box
 
-# from molpy.analysis.utils import Accumulator
+from analysis import Analyzer
 
 class Management:
     
@@ -32,23 +32,23 @@ class Management:
         
         return task
     
-class Mock:
+class Mock(Analyzer):
     
     def __init__(self, positions) -> None:
-        
+        super().__init__('mock')
         self.positions = positions
         self.data = {}
         
     def start(self):
         
-        self.rdfKernel = density.RDF(bins=200, r_max=4, r_min=0)
+        self.defKernel('rdfKernel', density.RDF(bins=200, r_max=4, r_min=0))
         self.rdfKernel.compute((Box.cube(10), self.positions))
         self.data['rdf'] = self.rdfKernel.rdf
         # self.accu = Accumulator(add, 'test')
         # self.accu(1)
         # self.accu(2)
-        delattr(self, 'rdfKernel')
-        
+        self.delKernel()
+        # print(self.__getstate__)
         return self
         
 if __name__ == '__main__':
