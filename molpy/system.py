@@ -6,7 +6,6 @@
 
 from molpy.atoms import Atoms
 from molpy.io.lmp import DataReader, DumpReader
-from molpy.topo import Topo
 from .box import Box
 
 class System:
@@ -14,7 +13,6 @@ class System:
     def __init__(self):
         
         self._atoms = None
-        self._topo = Topo(self._atoms)
         self._box = None
         self._forcefield = None
         
@@ -24,7 +22,7 @@ class System:
     
     @property
     def topo(self):
-        return self._topo
+        return self._atoms.topo
     
     @property
     def box(self):
@@ -35,16 +33,16 @@ class System:
         return self._forcefield
         
     def getAtoms(self):
-        return self.data.getAtoms()
+        return self._atoms
     
     def getBonds(self):
-        return self.topo.getBonds()
+        return self._atoms.getBonds()
     
     def getAngles(self):
-        return self.topo.getAngles()
+        return self._atoms.getAngles()
         
     def getDihedral(self):
-        return self.topo.getDihedral()
+        return self._atoms.getDihedral()
 
     def loadData(self, dataFile, atom_style='full'):
         
@@ -55,9 +53,9 @@ class System:
         self.loadAtoms(atomData, bondData)
         
     def loadAtoms(self, atomData, bondData):
-        atoms = Atoms(len(atomData), fromAtoms=atomData)
+        atoms = Atoms(fields=atomData)
         atoms.fromStructuredArray(atomData)
-        self._topo.loadTopo(bondData)
+        atoms.loadTopo(bondData)
         self._atoms = atoms
         
     def loadTraj(self, dumpFile):

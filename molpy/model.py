@@ -4,13 +4,32 @@
 # version: 0.0.2
 
 import numpy as np
+import warnings
 
 class Model:
     
-    def __init__(self, n):
+    def __init__(self, fields:dict=None):
         super().__setattr__('_fields', {})
-        # self._n = n
-        super().__setattr__('_n', n)
+        super().__setattr__('name', id(self))
+        if fields is not None:
+            self.fields.update(fields)
+            
+    @staticmethod
+    def fromModel(model):
+        return Model(model.fields)
+    
+    def __repr__(self):
+        return f'<Model {self.name} with len {len(self)}>'
+    
+    def __len__(self):
+        if not self.isAlign():
+            warnings.warn('not align')
+        else:
+            return next(iter(self._fields.values()))
+        
+    @property
+    def n(self):
+        return len(self)
         
     def __getattr__(self, field):
         return self._fields[field]
@@ -23,9 +42,11 @@ class Model:
         else:
             super().__setattr__(field, value)
             
-    def check_alignment(self):
-        field_lengths = np.array(map(len, self._fields.values()))
-        if (field_lengths == self._n).all():
+    def isAlign(self):
+        field_lengths = np.asarray(tuple(map(len, self._fields.values())))
+        field_lengths -= np.max(field_lengths)
+        field_lengths = field_lengths.astype(np.bool_)
+        if ~field_lengths.all():
             return True
         return False
     

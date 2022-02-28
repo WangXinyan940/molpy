@@ -5,7 +5,6 @@
 
 from collections import defaultdict
 from itertools import combinations
-import jax.numpy as jnp
 
 from .angle import Angles
 from .bond import Bonds
@@ -43,15 +42,6 @@ class Topo:
         self._hasAngle = False
         self._hasDihedral = False    
         self._hasAtom = False
-        
-    def setAtoms(self, atoms):
-        
-        atomArgType = getattr(atoms, '__class__', None)  # avoid to use :=
-        if atomArgType:
-            if atomArgType.__name__ == 'Atoms':
-                self._atoms = atoms.getAtoms()
-                
-        self._hasAtom = True
         
     def loadTopo(self, connection):
         if connection is not None:
@@ -130,7 +120,6 @@ class Topo:
         return self._dihedrals
     
     def getBondIdx(self):
-        
         bonds = self.getBonds()
         return bonds.bondIdx
     
@@ -149,33 +138,4 @@ class Topo:
     angleIdx = property(getAngleIdx)
     dihedralIdx = property(getDihedralIdx)
 
-    def doEmbedding(self):
-
-        node_features = self._atoms.doEmbedding()
-        jnpAdjList = jnp.array(self.adjList)
-        senders = jnpAdjList[:, 0]
-        receivers = jnpAdjList[:, 1]
-
-        # edge_features = 
-
-        # You can optionally add edge attributes to the 5 edges.
-        edges = jnp.array([[5.], [6.], [7.], [8.], [8.]])
-
-        # We then save the number of nodes and the number of edges.
-        # This information is used to make running GNNs over multiple graphs
-        # in a GraphsTuple possible.
-        n_node = jnp.array([4])
-        n_edge = jnp.array([5])
-
-        # Optionally you can add `global` information, such as a graph label.
-        global_context = jnp.array([[1]]) # Same feature dims as nodes and edges.
-        graph = jraph.GraphsTuple(
-            nodes=node_features,
-            edges=edges,
-            senders=senders,
-            receivers=receivers,
-            n_node=n_node,
-            n_edge=n_edge,
-            globals=global_context
-            )
-        return graph        
+ 
