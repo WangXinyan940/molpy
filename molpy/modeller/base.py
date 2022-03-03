@@ -3,15 +3,8 @@
 # date: 2022-01-14
 # version: 0.0.1
 
-class ModellerBase:
+class BaseModdler:
     
     def __init__(self):
         pass
-    
-    def createAtoms(self, fields):
-        pass
-    
-    def createSystem(self, ):
-        pass
-    
     
