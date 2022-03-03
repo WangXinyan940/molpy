@@ -19,7 +19,7 @@ class Model:
         return Model(model.fields)
     
     def __repr__(self):
-        return f'<Model {self.name} with len {len(self)}>'
+        return f'<{self.__class__.__name__} {self.name} with len {len(self)}>'
     
     def __len__(self):
         if not self.isAlign():

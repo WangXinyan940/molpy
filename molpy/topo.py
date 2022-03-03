@@ -5,21 +5,14 @@
 
 from collections import defaultdict
 from itertools import combinations
-
-from .angle import Angles
-from .bond import Bonds
-from .dihedral import Dihedrals
-
+import numpy as np
 
 class Topo:
     
-    def __init__(self, atoms=None, connection=None):
+    def __init__(self, connection=None):
         
         self.reset()
         self.loadTopo(connection)
-        
-        if atoms is not None: 
-            self.setAtoms(atoms)
 
     @property
     def adjDict(self):
@@ -80,8 +73,16 @@ class Topo:
             for p in ps:
                 rawBonds.append([c, p])
 
-        self._bonds = Bonds(rawBonds, self._atoms)
+        # remove duplicates
+        rawBonds = np.array(rawBonds)
+        rawBonds = np.sort(rawBonds, axis=1)
+        bonds = np.unique(rawBonds, axis=0) 
+        self._bonds = bonds
         return self._bonds
+    
+    @property
+    def nbonds(self):
+        return len(self._bonds)
     
     def getAngles(self):
         
@@ -95,8 +96,17 @@ class Topo:
                 continue
             for (itom, ktom) in combinations(ps, 2):
                 rawAngles.append([itom, c, ktom])
-        self._angles = Angles(rawAngles, self._atoms)
-        return self._angles
+        
+        # remove duplicates
+        angles = np.array(rawAngles)
+        angles = np.where((angles[:,0]>angles[:,2]).reshape((-1, 1)), angles[:, ::-1], angles)
+        angles = np.unique(angles, axis=0)
+        self._angles = angles
+        return angles
+    
+    @property
+    def nangles(self):
+        return len(self._angles)
     
     def getDihedrals(self):
         
@@ -116,26 +126,20 @@ class Topo:
                 for ltom in topo[ktom]:
                     if ltom != jtom:
                         rawDihes.append([itom, jtom, ktom, ltom])
-        self._dihedrals = Dihedrals(rawDihes, self._atoms)
-        return self._dihedrals
+        
+        # remove duplicates
+        dihedrals = np.array(rawDihes)
+        dihedrals = np.where((dihedrals[:,1]>dihedrals[:,2]).reshape((-1, 1)), dihedrals[:, ::-1], dihedrals)
+        dihedrals = np.unique(dihedrals, axis=0)
+        self._dihedrals = dihedrals
+        return dihedrals
     
-    def getBondIdx(self):
-        bonds = self.getBonds()
-        return bonds.bondIdx
-    
-    def getAngleIdx(self):
-        angles = self.getAngles()
-        return angles.angleIdx
-    
-    def getDihedralIdx(self):
-        dihe = self.getDihedrals()
-        return dihe.dihedralIdx
+    @property
+    def ndihedrals(self):
+        return len(self._dihedrals)
     
     bonds = property(getBonds)
     angles = property(getAngles)
     dihedrals = property(getDihedrals)
-    bondIdx = property(getBondIdx)
-    angleIdx = property(getAngleIdx)
-    dihedralIdx = property(getDihedralIdx)
 
  

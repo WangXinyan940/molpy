@@ -15,6 +15,18 @@ class Atoms(Model):
     def __init__(self, fields:dict=None):
         super().__init__(fields)
         self.topo = Topo()
+        
+    @staticmethod
+    def fromAtoms(atoms):
+        return Atoms(atoms.fields)
+    
+    @property
+    def atoms(self):
+        atomList = []
+        for i in range(self.natoms):
+            atomInfo = {key:value[i] for key, value in self._fields.items()}
+            atomList.append(Atom(atomInfo))
+        return atomList
     
     @property
     def natoms(self):
@@ -78,16 +90,24 @@ class Atoms(Model):
         # square root and return
         if mode == 'vector':
             return np.sqrt(rog_sq[0])
+        
+    def loadTopo(self, connection):
+        self.topo.loadTopo(connection)
 
     def getBonds(self)->List[Bond]:
-        pass
+        bondIdx = self.topo.bonds
+        if bondIdx is None:
+            return []
+        
+        itoms = self.atoms[bondIdx[:, 0]]
+        jtoms = self.atoms[bondIdx[:, 1]]
+        bonds = [Bond(atom, btom) for atom, btom in zip(itoms, jtoms)]
+        return bonds
     
+    @property
     def nBonds(self)->int:
-        pass
+        return self.topo.nbonds
     
     def getBondIdx(self)->List[List]:
-        pass
+        return self.topo.bonds
     
-    def getBondWithIdx(self, i, j)->Optional[Bond]:
-        pass
-        
