@@ -55,7 +55,7 @@ class System:
     def loadAtoms(self, atomData, bondData):
         atoms = Atoms(fields=atomData)
         atoms.fromStructuredArray(atomData)
-        atoms.loadTopo(bondData)
+        atoms.setTopo(bondData)
         self._atoms = atoms
         
     def loadTraj(self, dumpFile):

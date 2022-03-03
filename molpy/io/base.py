@@ -32,9 +32,11 @@ class ReaderBase(metaclass=IOMetaClass):
         raise NotImplementedError("Override this in each subclass")
     
     
-class WriteBase:
+class WriterBase(metaclass=IOMetaClass):
     
-    pass
+    def __init__(self, filename, **kwargs):
+        self.filename = filename
+        self.kwargs = kwargs
 
 
 class FrameMetaInfo:

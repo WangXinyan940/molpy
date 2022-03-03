@@ -192,7 +192,10 @@ class RandomWalkOnFcc(RandomWalk):
     
     def linear(self, length, offset=0, out=None):
         start = self.findStart()
-        return self.walkOnce(start, length, offset)
+        positions, bonds = self.walkOnce(start, length, offset)
+        out.setPosition(positions)
+        out.setTopo(bonds)
+        return positions, bonds
     
     def graft(self, main_length, graft_length, graft_point, offset=0, out=None):
         
@@ -216,19 +219,6 @@ class RandomWalkOnFcc(RandomWalk):
             offset += gLen
             
         return pos_list, bond_list 
-    
-    def draw_molecule(self, positions, bonds, ax=None, **kwargs):
-        
-        if ax is None:
-            fig, ax = plt.subplots()
-        
-        for pos in positions:
-            ax.scatter(pos[0], pos[1], pos[2], **kwargs)
-        
-        for bond in bonds:
-            ax.plot(positions[bond, 0], positions[bond, 1], positions[bond, 2], **kwargs)
-        
-        return ax
 
     
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ class Topo:
     def __init__(self, connection=None):
         
         self.reset()
-        self.loadTopo(connection)
+        self.setTopo(connection)
 
     @property
     def adjDict(self):
@@ -36,7 +36,7 @@ class Topo:
         self._hasDihedral = False    
         self._hasAtom = False
         
-    def loadTopo(self, connection):
+    def setTopo(self, connection):
         if connection is not None:
             if isinstance(connection, dict):
                 adjDict, adjList, adjMatrix = self.__class__.validAdjDict(connection)

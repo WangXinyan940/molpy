@@ -3,7 +3,7 @@
 # date: 2022-01-09
 # version: 0.0.1
 import numpy as np
-from .base import ReaderBase, ReaderTrajBase
+from .base import ReaderBase, ReaderTrajBase, WriterBase
 
 
 # Sections will all start with one of these words
@@ -154,7 +154,6 @@ class DataReader(ReaderBase, LAMMPSIO):
         if 'Bonds' in sections:
             self.bonds, self.bondTypes = self._parse_bonds(sections['Bonds'])
             
-
     def _parse_vel(self, datalines, order):
         """Strip velocity info into np array
         Parameters
@@ -294,4 +293,34 @@ class DumpReader(ReaderTrajBase, LAMMPSIO):
         for i in frames:
             yield self.parse(i)
  
+class DataWriter(WriterBase, LAMMPSIO):
     
+    def __init__(self, filename, **kwargs):
+        super().__init__(filename, **kwargs)
+        
+    def write(self, atoms):
+        self._write_header()
+        self._write_atoms(atoms)
+        self._write_footer()
+        
+    def _write_header(sel,f = None):
+        if f is None:
+            f = self.f
+        f.write('ITEM: TIMESTEP\n')
+        f.write('ITEM: NUMBER OF ATOMS\n')
+        f.write('ITEM: BOX BOUNDS pp pp pp\n')
+        f.write('ITEM: ATOMS id type x y z\n')
+        
+    def _write_atoms(self, atoms):
+        self.f.write('ITEM: TIMESTEP\n')
+        self.f.write('0\n')
+        self.f.write('ITEM: NUMBER OF ATOMS\n')
+        self.f.write(str(len(atoms))+'\n')
+        self.f.write('ITEM: BOX BOUNDS xlo xhi ylo yhi zlo zhi\n')
+        self.f.write('0.0 0.0 0.0 0.0 0.0 0.0\n')
+        self.f.write('ITEM: ATOMS id type x y z\n')
+        for i, atom in enumerate(atoms):
+            self.f.write(str(i+1)+' '+str(atom[0])+' '+' '.join(map(str, atom[1:]))+'\n')
+            
+    def _write_footer(self):
+        pass

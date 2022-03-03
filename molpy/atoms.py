@@ -91,8 +91,11 @@ class Atoms(Model):
         if mode == 'vector':
             return np.sqrt(rog_sq[0])
         
-    def loadTopo(self, connection):
-        self.topo.loadTopo(connection)
+    def setTopo(self, connection):
+        self.topo.setTopo(connection)
+        
+    def setPositions(self, positions, **kwargs):
+        self._fields['position'] = positions
 
     def getBonds(self)->List[Bond]:
         bondIdx = self.topo.bonds
