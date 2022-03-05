@@ -228,7 +228,69 @@ class DataReader(ReaderBase, LAMMPSIO):
             unitcell[3:] = 90., 90., 90.
 
             return unitcell
+  
+class DataWriter(WriterBase, LAMMPSIO):
+    
+    def __init__(self, filename, **kwargs):
+        super().__init__(filename, **kwargs)  
         
+    def write(self, system, comment=None, **kwargs):
+        """Writes a LAMMPS_ DATA file.
+        """
+        atoms = system.atoms
+        box = system.box
+        forcefield = system.forcefield
+        if comment is None:
+            comment = '# Written by molpy'
+        
+        with open(self.filename, 'w') as f:
+            
+            self._write_header(f, atoms, box, comment)
+            self._write_masses(f, forcefield)
+            self._write_atoms(f, atoms)
+            self._write_bonds(f, atoms)
+            # self._write_velocities(f)
+            self._write_angles(f, atoms)
+            self._write_dihedrals(f, atoms)
+        
+    def _write_header(self, f, atoms, box, comment):
+        
+        f.write(comment)
+        f.write('\n')
+        f.write(f'\t{atoms.natoms} atoms\n')
+        f.write(f'\t{atoms.nbonds} bonds\n')
+        f.write(f'\t{atoms.nangles} angles\n')
+        f.write(f'\t{atoms.ndihedrals} dihedrals\n\n')
+        
+        f.write(f'\t{atoms.ntypes} atom types\n')
+        f.write(f'\t{atoms.nbondTypes} bond types\n')
+        f.write(f'\t{atoms.nangleTypes} angle types\n')
+        f.write(f'\t{atoms.ndihedralTypes} dihedral types\n\n')
+        
+        f.write(f'\t{box.xlo}  {box.xhi}  xlo xhi\n')     
+        f.write(f'\t{box.ylo}  {box.yhi}  ylo yhi\n')
+        f.write(f'\t{box.zlo}  {box.zhi}  zlo zhi\n\n')
+        
+    def _write_mass(self, f, forcefield):
+        
+        f.write(f'Masses\n\n')
+        for atomType in forcefield.atomTypes.values():
+            f.write(f'\t{atomType.typeID}\t{atomType.mass}  # {atomType.name}\n')
+            
+    def _write_atoms(self, f, atoms):
+        
+        f.write('Atoms\n\n')
+        for atom in atoms:
+            f.write(f'\t{atom.id}\t{atom.typeID}\t{atom.x}\t{atom.y}\t{atom.z}\n')
+            
+    def _write_bonds(self, f, atoms):
+        
+        f.write('Bonds\n\n')
+        for bond in atoms.bonds:
+            f.write(f'\t{bond[0]}\t{bond[1]}\t{bond[2]}\n')
+            
+            
+    
         
 class DumpReader(ReaderTrajBase, LAMMPSIO):
     
@@ -293,34 +355,3 @@ class DumpReader(ReaderTrajBase, LAMMPSIO):
         for i in frames:
             yield self.parse(i)
  
-class DataWriter(WriterBase, LAMMPSIO):
-    
-    def __init__(self, filename, **kwargs):
-        super().__init__(filename, **kwargs)
-        
-    def write(self, atoms):
-        self._write_header()
-        self._write_atoms(atoms)
-        self._write_footer()
-        
-    def _write_header(sel,f = None):
-        if f is None:
-            f = self.f
-        f.write('ITEM: TIMESTEP\n')
-        f.write('ITEM: NUMBER OF ATOMS\n')
-        f.write('ITEM: BOX BOUNDS pp pp pp\n')
-        f.write('ITEM: ATOMS id type x y z\n')
-        
-    def _write_atoms(self, atoms):
-        self.f.write('ITEM: TIMESTEP\n')
-        self.f.write('0\n')
-        self.f.write('ITEM: NUMBER OF ATOMS\n')
-        self.f.write(str(len(atoms))+'\n')
-        self.f.write('ITEM: BOX BOUNDS xlo xhi ylo yhi zlo zhi\n')
-        self.f.write('0.0 0.0 0.0 0.0 0.0 0.0\n')
-        self.f.write('ITEM: ATOMS id type x y z\n')
-        for i, atom in enumerate(atoms):
-            self.f.write(str(i+1)+' '+str(atom[0])+' '+' '.join(map(str, atom[1:]))+'\n')
-            
-    def _write_footer(self):
-        pass
