@@ -4,42 +4,22 @@
 # version: 0.0.2
 
 import numpy as np
+from molpy.interaction import register
 
 class Bond:
     
     def __init__(self, itom, jtom):
         self.itom = itom
         self.jtom = jtom
+        
+    def getLength(self):
+        
+        return np.linalg.norm(self.itom.position - self.jtom.position)
 
-class Bonds:
-    
-    def __init__(self, bonds, atoms=None) -> None:
+    def setBondType(self, bondType):
+        name = bondType.name
+        bondStyle = register.getBondInteraction(name)
+        b = bondStyle(**bondType.properties)
+        self.getEnergy = b.getEnergy
+        self.getForce = b.getForce
         
-        self.bondIdx = Bonds.unique(bonds)
-        self.atoms = atoms
-    
-    @staticmethod 
-    def unique(bonds):
-        bonds = np.array(bonds)
-        bonds = np.sort(bonds, axis=1)
-        bonds = np.unique(bonds, axis=0)
-        return bonds
-        
-    @property
-    def nbonds(self):
-        return len(self.bondIdx)
-    
-    def __len__(self):
-        return len(self.bondIdx)
-    
-    def getBondInstances(self):
-        
-        if self.atoms is None:
-            raise ValueError
-        
-        itoms = self.atoms[self.bondIdx[:, 0]]
-        jtoms = self.atoms[self.bondIdx[:, 1]]
-
-        bonds = [Bond(atom, btom) for atom, btom in zip(itoms, jtoms)]
-        return bonds
-

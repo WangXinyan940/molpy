@@ -17,6 +17,12 @@ class AtomTypes(dict):
     @property
     def n(self):
         return len(self)
+    
+    def getAtomTypeByName(self, name):
+        return self[name]
+    
+    def getAll(self):
+        return list(self.values())
         
 class BondTypes:
     
@@ -38,11 +44,21 @@ class BondTypes:
         self.bondMatrix.setdefault(atomType1, {})[atomType2] = bondType
         self.bondMatrix.setdefault(atomType2, {})[atomType1] = bondType
         
+    def getAll(self):
+        tmpSet = set()
+        for at1 in self.bondMatrix:
+            for at2 in self.bondMatrix[at1]:
+                tmpSet.add(self.bondMatrix[at1][at2])
+        return list(tmpSet)
+        
 class BaseType:
     
     def __init__(self, name):
         self.name = name
-        self.properties = self.__dict__
+        
+    @property
+    def properties(self):
+        return self.__dict__
         
     def match(self):
         raise NotImplementedError
