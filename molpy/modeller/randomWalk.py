@@ -6,8 +6,7 @@
 from typing import Iterable
 import numpy as np
 from collections import deque
-from base import BaseModdler
-import matplotlib.pyplot as plt
+from molpy.modeller.base import BaseModdler
 
 class RandomWalk(BaseModdler):
     
@@ -77,46 +76,31 @@ class RandomWalkOnFcc(RandomWalk):
         
         return True if self._sites[tuple(site)] == 1 else False
             
-    def walkOnce(self, start_site, nsteps, previous_site=None, offset=0, exclude_start=False):
-        """_summary_
+    def walkOnce(self, start_site, nsteps, offset=0, exclude_start=False, start_idx=0):
 
-        Args:
-            start_site (_type_): _description_
-            nsteps (_type_): _description_
-            previous_site (_type_, optional): _description_. Defaults to None.
-            offset (int, optional): _description_. Defaults to 0.
 
-        Raises:
-            ValueError: _description_
-
-        Returns:
-            _type_: _description_
-        """
-        current_site = start_site
-        next_site = None
-        step_queue = deque([previous_site, start_site], 3)
-        
-        # results
         walk_path = np.zeros((nsteps, 4), dtype=int)
         bonds = []
-        if not exclude_start:
-            walk_path[0] = start_site
-            nstep = 1
-        else:
+        step_queue = deque([], 3)
+        if exclude_start:
             nstep = 0
-        
+        else:
+            walk_path[0] = start_site
+            step_queue.append(start_site)
+            nstep = 1
+        next_site = None
+        current_site = start_site
+
         v_queue = deque([], 2)
         n_queue = deque([], 2)
-        if previous_site:
-            va = self.calcVector(previous_site, start_site)
-            na = np.linalg.norm(va) if va else 0
-            v_queue.append(va)
-            n_queue.append(na)        
+
+        # va = self.calcVector(previous_site, start_site)
+        # na = np.linalg.norm(va) if va else 0
+        # v_queue.append(va)
+        # n_queue.append(na)        
         
         alter_site = np.zeros((12, 4), dtype=int)
-        nalters = 0
-        current_coord = self.site2coord(current_site)
-        
+        nalters = 0        
         angle = 0
         while nstep < nsteps:
             
@@ -139,11 +123,15 @@ class RandomWalkOnFcc(RandomWalk):
                     nb = np.linalg.norm(vb)
                     if nb < 0.708 and nb > 0.01:
 
-                        if len(v_queue):
+                        if len(v_queue):  # not the first step
                             angle = np.arccos(v_queue[-1]@vb/n_queue[-1]/nb) * 180 / np.pi
 
-                        if (angle < -60 and angle > -150) or (angle > 60 and angle < 150) or nstep == 1:
-                            assert not np.array_equal(current_site, trial_site)
+                            if (angle < -60 and angle > -150) or (angle > 60 and angle < 150) or nstep == 1:
+                                # assert not np.array_equal(current_site, trial_site)
+                                alter_site[nalters] = trial_site
+                                nalters +=1
+                                
+                        else:
                             alter_site[nalters] = trial_site
                             nalters +=1
 
@@ -153,8 +141,8 @@ class RandomWalkOnFcc(RandomWalk):
                 self._sites[tuple(next_site)] = 1
                 walk_path[nstep] = next_site
  
-
-                bonds.append([nstep+offset-1, nstep+offset])
+                if nstep:
+                    bonds.append([nstep+offset-1, nstep+offset])
                 
                 vb = self.calcVector(current_site, next_site)
                 v_queue.append(vb)
@@ -162,7 +150,7 @@ class RandomWalkOnFcc(RandomWalk):
                 nb = np.linalg.norm(vb)
                 n_queue.append(nb)
                 step_queue.append(next_site)
-                previous_site = current_site
+                # previous_site = current_site
                 current_site = next_site
                 nstep += 1
                 nalters = 0
@@ -171,6 +159,8 @@ class RandomWalkOnFcc(RandomWalk):
                 raise ValueError
         
         positions = self.sites2coord(walk_path)
+        if start_idx:
+            bonds.insert(0, [start_idx, bonds[0][0]])
         
         return positions, bonds
     
@@ -190,14 +180,12 @@ class RandomWalkOnFcc(RandomWalk):
             
         return pos_list, bond_list
     
-    def linear(self, length, offset=0, out=None):
+    def linear(self, length, offset=0):
         start = self.findStart()
         positions, bonds = self.walkOnce(start, length, offset)
-        out.setPosition(positions)
-        out.setTopo(bonds)
         return positions, bonds
     
-    def graft(self, main_length, graft_length, graft_point, offset=0, out=None):
+    def graft(self, main_length, graft_length, graft_point, offset=0):
         
         pos_list = []
         bond_list = []
@@ -213,16 +201,11 @@ class RandomWalkOnFcc(RandomWalk):
             gLen = graft_length[g]
             start = positions[point]
             
-            g_pos, g_bond = self.walkOnce(start, gLen, offset=offset, exclude_start=True)
+            
+            g_pos, g_bond = self.walkOnce(start, gLen, offset=offset, exclude_start=True, start_idx=point+offset)
             pos_list.append(g_pos)
             bond_list.append(g_bond)
             offset += gLen
-            
-        return pos_list, bond_list 
 
-    
-if __name__ == '__main__':
-    rw = RandomWalkOnFcc(10, 10, 10)
-    pos_list, bond_list = rw.linear(5)
-    ax = rw.draw_molecule(pos_list, bond_list)
-    
+        return np.concatenate(pos_list), np.concatenate(bond_list) 
+

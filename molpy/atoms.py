@@ -108,7 +108,7 @@ class Atoms(Model):
         return bonds
     
     @property
-    def nBonds(self)->int:
+    def nbonds(self)->int:
         return self.topo.nbonds
     
     def getBondIdx(self)->List[List]:

@@ -25,11 +25,11 @@ class Model:
         if not self.isAlign():
             warnings.warn('not align')
         else:
-            return next(iter(self._fields.values()))
+            return len(next(iter(self._fields.values())))
         
     @property
     def n(self):
-        return len(self)
+        return self.__len__()
         
     def __getattr__(self, field):
         return self._fields[field]

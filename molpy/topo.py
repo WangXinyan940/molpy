@@ -82,6 +82,8 @@ class Topo:
     
     @property
     def nbonds(self):
+        if not self._hasBond:
+            self.getBonds()
         return len(self._bonds)
     
     def getAngles(self):
@@ -106,6 +108,8 @@ class Topo:
     
     @property
     def nangles(self):
+        if not self._hasAngle:
+            self.getAngles()
         return len(self._angles)
     
     def getDihedrals(self):
@@ -136,6 +140,8 @@ class Topo:
     
     @property
     def ndihedrals(self):
+        if not self._hasDihedral:
+            self.getDihedrals()
         return len(self._dihedrals)
     
     bonds = property(getBonds)
