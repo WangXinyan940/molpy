@@ -5,6 +5,8 @@
 
 from typing import List, Optional
 from molpy.bond import Bond
+from molpy.angle import Angle
+from molpy.dihedral import Dihedral
 from .topo import Topo
 from .model import Model
 from .atom import Atom
@@ -104,7 +106,7 @@ class Atoms(Model):
         
         itoms = self.atoms[bondIdx[:, 0]]
         jtoms = self.atoms[bondIdx[:, 1]]
-        bonds = [Bond(atom, btom) for atom, btom in zip(itoms, jtoms)]
+        bonds = [Bond(itom, jtom) for itom, jtom in zip(itoms, jtoms)]
         return bonds
     
     @property
@@ -113,4 +115,43 @@ class Atoms(Model):
     
     def getBondIdx(self)->List[List]:
         return self.topo.bonds
+    
+    def getAngles(self)->List[Angle]:
+        angleIdx = self.topo.angles
+        if angleIdx is None:
+            return []
+        
+        itoms = self.atoms[angleIdx[:, 0]]
+        jtoms = self.atoms[angleIdx[:, 1]]
+        ktoms = self.atoms[angleIdx[:, 2]]
+        angles = [Angle(itom, jtom, ktom) for itom, jtom, ktom in zip(itoms, jtoms, ktoms)]
+        return angles
+    
+    @property
+    def nangles(self)->int:
+        return self.topo.nangles
+    
+    def getAnglesIdx(self)->List[List]:
+        return self.topo.angles
+    
+    def getDihedrals(self)->List[Dihedral]:
+        
+        dihedralIdx = self.topo.dihedrals
+        if dihedralIdx is None:
+            return []
+        
+        itoms = self.atoms[dihedralIdx[:, 0]]
+        jtoms = self.atoms[dihedralIdx[:, 1]]
+        ktoms = self.atoms[dihedralIdx[:, 2]] 
+        ltoms = self.atoms[dihedralIdx[:, 3]]    
+        dihedrals = [Dihedral(itom, jtom, ktom, ltom) for itom, jtom, ktom, ltom in zip(itoms, jtoms, ktoms, ltoms)]
+        
+        return dihedrals
+    
+    @property
+    def ndihedrals(self)->int:
+        return self.topo.ndihedrals
+    
+    def getDihedralIdx(self)->List[List]:
+        return self.topo.dihedrals
     

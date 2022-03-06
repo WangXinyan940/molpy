@@ -11,6 +11,16 @@ class Angle:
         self.itom = itom
         self.jtom = jtom
         self.ktom = ktom
+        
+    def getAngle(self, ):
+        
+        va = self.jtom.position - self.itom.position
+        vb = self.jtom.position - self.ktom.position
+        
+        return np.arccos(np.dot(va, vb) / (np.linalg.norm(va) * np.linalg.norm(vb)))
+    
+    def setAngleType(self, angleTypes):
+        pass
 
 class Angles:
     

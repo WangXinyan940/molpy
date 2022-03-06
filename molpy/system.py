@@ -31,6 +31,22 @@ class System:
     @property
     def forcefield(self):
         return self._forcefield
+    
+    @property
+    def natoms(self):
+        return self._atoms.natoms
+        
+    @property
+    def nbonds(self):
+        return self._atoms.nbonds
+    
+    @property
+    def nangles(self):
+        return self._atoms.nangles
+    
+    @property
+    def ndihedrals(self):
+        return self._atoms.ndihedrals
         
     def getAtoms(self):
         return self._atoms

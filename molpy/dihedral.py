@@ -8,7 +8,13 @@ import numpy as np
 class Dihedral:
     
     def __init__(self, itom, jtom, ktom, ltom) -> None:
-        pass
+        
+        self.itom = itom
+        self.jtom = jtom
+        self.ktom = ktom
+        self.ltom = ltom
+        
+
 
 class Dihedrals:
     
