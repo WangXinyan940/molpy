@@ -5,83 +5,40 @@
 
 import numpy as np
 import numpy.testing as npt
-
-from molpy.utils import shallowCopyArray
+import pytest
+from molpy.utils import fromDictToStruct, fromStructToDict
 
 class TestUtils:
     
-    def test_shallowCopyArray(self):
+    @pytest.fixture(scope='module', name='ref')
+    def test_init(self):
         
-        arr1d = np.arange(5)
-        copy = arr1d[:3]
-        arr1d[:] = np.zeros_like(arr1d)
-        npt.assert_array_equal(copy, arr1d[:3])
+        d = {'element': np.array(['H', 'H', 'H', 'H', 'H']),
+             'mass': np.array([1.00782503207, 1.00782503207, 1.00782503207, 1.00782503207, 1.00782503207]),}
         
-        copy = arr1d[::2]
-        arr1d[:] = np.ones_like(arr1d)
-        npt.assert_array_equal(copy, arr1d[::2])
+        dtypes = ['<U2', '<f8']
         
-        copy = arr1d[[0, 2]]
-        arr1d[:] = np.zeros_like(arr1d)
-        with npt.assert_raises(AssertionError):
-            npt.assert_array_equal(copy, arr1d[[0, 2]])
+        arr = np.empty((5, ), dtype=np.dtype(list(zip(d.keys(), dtypes))))
+        arr['element'] = d['element']
+        arr['mass'] = d['mass']
         
+        assert arr['element'][-1] == 'H'
+        assert arr['mass'][-1] == 1.00782503207
         
-        arr2d = np.ones((5, 3))
-        copy = arr2d[:3]
-        arr2d[:] = np.zeros_like(arr2d)
-        npt.assert_array_equal(copy, arr2d[:3])
+        yield d, arr
         
-        copy = arr2d[::2]
-        arr2d[:] = np.ones_like(arr2d)
-        npt.assert_array_equal(copy, arr2d[::2])
+    def test_fromDictToStruct(self, ref):
         
-        copy = arr2d[[0, 2]]
-        arr2d[:] = np.zeros_like(arr2d)
-        with npt.assert_raises(AssertionError):
-            npt.assert_array_equal(copy, arr2d[[0, 2]])
-            
-            
-        struc = np.zeros((5), dtype=[('name', str), ('position', float, 3)])
-        copy = struc[:3]
-        struc['name'] = [f'{i}' for i in range(5)]
-        struc['position'] = np.random.random((5, 3))
-        npt.assert_equal(copy, struc[:3])
+        d, arr = ref
         
-        copy = struc[::2]
-        struc['name'] = [f'-{i}' for i in range(5)]
-        struc['position'] = np.random.random((5, 3))
-        npt.assert_equal(copy, struc[::2])
+        arr1 = fromDictToStruct(d)
+        npt.assert_equal(arr1['element'], arr['element'])
+        npt.assert_equal(arr1['mass'], arr['mass'])
         
-        copy = struc[[0, 2]]
-        struc['name'] = [f'{i}' for i in range(5)]
-        struc['position'] = np.random.random((5, 3))
-        with npt.assert_raises(AssertionError):
-            npt.assert_equal(copy, struc[[0, 2]])
-            
-        """ 
-        test shallowCopyArray
-        def shallowCopyArray(array):
-
-            outter_shape = array.shape[:-1]
-            tmp = np.zeros(outter_shape, dtype=object)
-            for i in range(outter_shape):
-                tmp[i] = array[i]
-            return tmp            
-        """
-        tmp = shallowCopyArray(arr1d)
-        copy = tmp[[0, 2]]
-        arr1d[:] = np.zeros_like(arr1d)
-        npt.assert_array_equal(copy, arr1d[[0, 2]])
+    def test_fromStructToDict(self, ref):
         
-        arr2d = shallowCopyArray(arr2d)
-        copy = arr2d[[0, 2]]
-        arr2d[:] = np.zeros_like(arr2d)
-        npt.assert_array_equal(copy[0], arr2d[0])
+        d, arr = ref
         
-        tmp = shallowCopyArray(struc)
-        copy = tmp[[0, 2]]
-        struc['name'] = [f'{i}' for i in range(5)]
-        struc['position'] = np.random.random((5, 3))
-        npt.assert_equal(copy[0], struc[0])        
-        npt.assert_equal(copy[1], struc[2])        
+        d1 = fromStructToDict(arr)
+        npt.assert_equal(d1['element'], d['element'])
+        npt.assert_equal(d1['mass'], d['mass'])

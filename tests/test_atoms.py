@@ -6,7 +6,7 @@
 import pytest
 import numpy as np
 import numpy.testing as npt
-from molpy.atoms import Atoms
+from molpy.atoms import AtomManager, Atoms
 
 
 class TestAtoms:
@@ -24,7 +24,7 @@ class TestAtoms:
         
         positions = np.zeros((6, 3))
         positions[:, 0] = np.arange(6)
-        atoms = Atoms(6, dict(id=np.arange(6), position=positions))
+        atoms = Atoms(dict(id=np.arange(6), position=positions))
         npt.assert_equal(atoms.calcCenterOfMass(), np.array([2.5, 0, 0]))
         
     def test_calc_raduis_of_gyration(self):
@@ -32,7 +32,7 @@ class TestAtoms:
         # linear
         positions = np.zeros((60, 3))
         positions[:, 0] = np.arange(60)
-        atoms = Atoms(60, dict(id=np.arange(60), position=positions))
+        atoms = Atoms(dict(id=np.arange(60), position=positions))
         npt.assert_allclose(atoms.calcRadiusOfGyration(), 17.318102)
         
         # circle
@@ -40,22 +40,35 @@ class TestAtoms:
         theta = 2*np.arange(60)*np.pi/60
         positions[:, 0] = np.cos(theta)
         positions[:, 1] = np.sin(theta)
-        atoms = Atoms(60, dict(id=np.arange(60), position=positions))
+        atoms = Atoms(dict(id=np.arange(60), position=positions))
         npt.assert_allclose(atoms.calcRadiusOfGyration(), 1)
+        
+    def test_add_atoms(self):
+
+        positions = np.zeros((60, 3))
+        positions[:, 0] = np.arange(60)
+        atoms1 = Atoms(dict(id=np.arange(60), position=positions))    
+        
+        positions = np.zeros((6, 3))
+        positions[:, 0] = np.arange(6)
+        atoms2 = Atoms(dict(id=np.arange(6), position=positions))           
+        
+        atoms1.append(atoms2)
+        assert atoms1.natoms == 66 
+        
 
                     
         
-class TestAtomsSelections:
+class TestAtomManager:
+    
+    @pytest.fixture(scope='class', name='am')
+    def test_init(self):
+        atomManager = AtomManager()
+        assert atomManager.atoms.natoms == 0
+        assert atomManager.molecules.__len__() == 0
+        return atomManager
         
-    def test_select_by_func(self, atoms):
+    def test_register_type(self, am):
         
-        def func(data):
-            return data['mol'] == 1
-        
-        newAtoms = atoms.selectByFunc(func)
-        npt.assert_equal(newAtoms.id, [2, 3])
-        opos = newAtoms.position
-        atoms.position = np.random.random((5, 3))
-        npt.assert_equal(newAtoms.position, opos)
-        
-        
+        am.registerType('NewType')
+        assert len(am.newTypes) == 0

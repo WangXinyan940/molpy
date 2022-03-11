@@ -3,10 +3,13 @@
 # date: 2022-01-08
 # version: 0.0.2
 
-from typing import List, Optional
+from logging import warning
+from typing import List, Literal, Optional
 from molpy.bond import Bond
 from molpy.angle import Angle
 from molpy.dihedral import Dihedral
+from molpy.neighborlist import NeighborList
+from molpy.utils import fromStructToDict
 from .topo import Topo
 from .model import Model
 from .atom import Atom
@@ -24,11 +27,14 @@ class Atoms(Model):
     
     @property
     def atoms(self):
+        return self.getAtoms()
+    
+    def getAtoms(self):
         atomList = []
         for i in range(self.natoms):
             atomInfo = {key:value[i] for key, value in self._fields.items()}
             atomList.append(Atom(atomInfo))
-        return atomList
+        return atomList    
     
     @property
     def natoms(self):
@@ -44,8 +50,9 @@ class Atoms(Model):
         a = struc[struc[field].argsort()]
         groups = np.split(a, np.unique(a[field], return_index=True)[1][1:])
         atoms = []
+        groups = [np.array(group, dtype=struc.dtype) for group in groups]
         for group in groups:
-            atoms.append(Atoms(natoms=len(group), fromAtoms=group))
+            atoms.append(Atoms(fromStructToDict(group)))
         return atoms
 
     @property
@@ -155,3 +162,51 @@ class Atoms(Model):
     def getDihedralIdx(self)->List[List]:
         return self.topo.dihedrals
     
+    def append(self, atoms):
+        
+        # validation
+        assert len(atoms._fields) == len(self._fields), ValueError
+        
+        for key, value in atoms._fields.items():
+            self._fields[key] = np.append(self._fields[key], value)
+        
+        
+class AtomManager:
+    
+    atomsTypes = [
+        'Molecule'
+    ]
+    
+    def __init__(self):
+        
+        self.reset()
+        for atomsType in self.atomsTypes:
+            setName = atomsType[0].lower() + atomsType[1:] + 's'
+            setattr(self, setName, {})
+        
+    def reset(self):
+        
+        self.atoms = Atoms()
+        
+        for key in self.atomsTypes:
+            setattr(self, key, {})
+            
+    def registerType(self, newType:str):
+        
+        setName = newType[0].lower() + newType[1:] + 's'
+        
+        if newType in self.atomsTypes:
+            warning.warn(f'{newType} is already registered')
+        
+        else:
+            self.atomsTypes.append(newType)
+            setattr(self, f'{setName}', {})
+
+    def addAtoms(self, atoms):
+        
+        if atoms.type not in self.atomsTypes:
+            self.registerAtom(atoms)
+            
+        self.atoms.addAtoms(atoms)
+        
+        getattr(self, atoms.type)[atoms.name] = atoms

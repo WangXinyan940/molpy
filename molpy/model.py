@@ -12,7 +12,7 @@ class Model:
         super().__setattr__('_fields', {})
         super().__setattr__('name', id(self))
         if fields is not None:
-            self.fields.update(fields)
+            self._fields.update(fields)
             
     @staticmethod
     def fromModel(model):
@@ -25,11 +25,21 @@ class Model:
         if not self.isAlign():
             warnings.warn('not align')
         else:
+            if len(self._fields.values()) == 0:
+                return 0
             return len(next(iter(self._fields.values())))
         
     @property
     def n(self):
         return self.__len__()
+    
+    @property
+    def type(self):
+        return self.__class__.__name__
+    
+    @property
+    def nfields(self):
+        return len(self._fields.values())
         
     def __getattr__(self, field):
         return self._fields[field]
@@ -43,7 +53,13 @@ class Model:
             super().__setattr__(field, value)
             
     def isAlign(self):
+                
         field_lengths = np.asarray(tuple(map(len, self._fields.values())))
+        if (field_lengths == 0).all():
+            return True
+        elif (field_lengths == 0).any():
+            return False
+         
         field_lengths -= np.max(field_lengths)
         field_lengths = field_lengths.astype(np.bool_)
         if ~field_lengths.all():

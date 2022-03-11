@@ -4,39 +4,19 @@
 # version: 0.0.2
 
 import numpy as np
-from pathlib import Path
-
-def shallowCopyArray(array):
-
-    outter_shape = array.shape[0]
-    tmp = np.zeros(outter_shape, dtype=object)
-    for i in range(outter_shape):
-        tmp[i] = array[i]
-    return tmp    
 
 
-class PathUtils:
-    
-    def __init__(self, rootPath=None):
+def fromDictToStruct(d:dict):
+    names = d.keys()
+    values = d.values()
+    dtypes = [v.dtype for v in values]
+    maxLength = max(map(len, values))
+    arr = np.empty((maxLength, ), dtype=np.dtype(list(zip(names, dtypes))))
+    for k, v in zip(names, values):
+        arr[k] = v
         
-        if rootPath:
-            self.rootPath = Path(rootPath)
-        else:
-            self.rootPath = Path.cwd()
-    
-    def findAll(self, pattern, subDir=None, recursion=False):
-        
-        if subDir is not None:
-            dir = Path.joinpath(self.rootPath, pattern)  # equal to self.rootPath / pattern
-            if not dir.exists() and not dir.is_dir:
-                raise LookupError(f'Not such directory: {dir}')
-            
-        if recursion:
-            paths = dir.glob('**/'+pattern)
-        else:
-            paths = dir.glob(pattern)
-            
-        return list(paths)
-    
-    def exists(self, pattern, subDir=None, recursion=False):
-        pass
+    return arr
+
+def fromStructToDict(arr):
+    return {k: arr[k] for k in arr.dtype.names}
+

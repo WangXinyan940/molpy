@@ -6,7 +6,9 @@
 
 from molpy.atoms import Atoms
 from molpy.io.lmp import DataReader, DumpReader
+from molpy.neighborlist import NeighborList
 from .box import Box
+from molpy.pair import Pair
 
 class System:
     
@@ -57,8 +59,17 @@ class System:
     def getAngles(self):
         return self._atoms.getAngles()
         
-    def getDihedral(self):
-        return self._atoms.getDihedral()
+    def getDihedrals(self):
+        return self._atoms.getDihedrals()
+    
+    def getPairs(self, cutoff=None):
+        if cutoff is None:
+            cutoff = self._box/2
+
+        neighborList = NeighborList(self._box, self._atoms.positions)
+        atoms = self.atoms
+        pairs = [Pair(atoms[pair[0]], atoms[pair[1]], pair[2]) for pair in neighborList.query(self.atoms.positions, dict(r_max=cutoff))]
+        return pairs
 
     def loadData(self, dataFile, atom_style='full'):
         

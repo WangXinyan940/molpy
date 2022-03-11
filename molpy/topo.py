@@ -5,14 +5,16 @@
 
 from collections import defaultdict
 from itertools import combinations
+from typing import Sequence
 import numpy as np
 
 class Topo:
     
-    def __init__(self, connection=None):
+    def __init__(self, connection=None, special_bonds:Sequence=None):
         
         self.reset()
         self.setTopo(connection)
+        self.special_bonds = special_bonds
 
     @property
     def adjDict(self):
