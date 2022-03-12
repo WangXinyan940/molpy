@@ -18,7 +18,7 @@ class TestSystem:
         rw = RandomWalkOnFcc(10, 10, 10)
         positions, bonds = rw.linear(10)
         atoms = toAtoms(positions, bonds)
-        system._atoms = atoms
+        system.atomManager.append(atoms)
         
         return system
     
@@ -29,5 +29,14 @@ class TestSystem:
         assert system.nangles == 8
         assert system.ndihedrals == 7
         
+    def test_add_atoms(self, system):
         
+        rw = RandomWalkOnFcc(10, 10, 10)
+        positions, bonds = rw.linear(10)
+        atoms = toAtoms(positions, bonds)
+        system.atomManager.append(atoms)
         
+        assert system.natoms == 20
+        assert system.nbonds == 18
+        assert system.nangles == 16
+        assert system.ndihedrals == 14

@@ -57,7 +57,7 @@ class TestAtoms:
         assert atoms1.natoms == 66 
         
 
-                    
+                
         
 class TestAtomManager:
     
@@ -72,3 +72,5 @@ class TestAtomManager:
         
         am.registerType('NewType')
         assert len(am.newTypes) == 0
+        
+    

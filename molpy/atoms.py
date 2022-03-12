@@ -164,11 +164,16 @@ class Atoms(Model):
     
     def append(self, atoms):
         
-        # validation
-        assert len(atoms._fields) == len(self._fields), ValueError
+        if len(self._fields):
+            # validation
+            assert len(atoms._fields) == len(self._fields), ValueError(f'Number of fields in atoms ({len(atoms._fields)}) does not match number of fields in self ({len(self._fields)})')
         
         for key, value in atoms._fields.items():
-            self._fields[key] = np.append(self._fields[key], value)
+            
+            if self._fields.get(key, None) is not None:
+                np.append(self._fields[key], value)
+            else:
+                self._fields[key] = value
         
         
 class AtomManager:
@@ -202,11 +207,6 @@ class AtomManager:
             self.atomsTypes.append(newType)
             setattr(self, f'{setName}', {})
 
-    def addAtoms(self, atoms):
+    def append(self, atoms):
         
-        if atoms.type not in self.atomsTypes:
-            self.registerAtom(atoms)
-            
-        self.atoms.addAtoms(atoms)
-        
-        getattr(self, atoms.type)[atoms.name] = atoms
+        self.atoms.append(atoms)

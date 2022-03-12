@@ -4,7 +4,7 @@
 # version: 0.0.2
 
 
-from molpy.atoms import Atoms
+from molpy.atoms import AtomManager, Atoms
 from molpy.io.lmp import DataReader, DumpReader
 from molpy.neighborlist import NeighborList
 from .box import Box
@@ -14,9 +14,14 @@ class System:
     
     def __init__(self):
         
-        self._atoms = None
+        self._atomManager = AtomManager()
+        self._atoms = self._atomManager.atoms
         self._box = None
         self._forcefield = None
+        
+    @property
+    def atomManager(self):
+        return self._atomManager
         
     @property
     def atoms(self):
@@ -83,7 +88,7 @@ class System:
         atoms = Atoms(fields=atomData)
         atoms.fromStructuredArray(atomData)
         atoms.setTopo(bondData)
-        self._atoms = atoms
+        self._atomManager.atoms = atoms
         
     def loadTraj(self, dumpFile):
         
