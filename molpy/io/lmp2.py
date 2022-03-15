@@ -214,3 +214,67 @@ class DataReader:
         
         return list(map(lambda x: list(map(int, x.split())), lines))
     
+class DataWriter:
+    
+    def __init__(self, fpath:str, atom_style='full'):
+        
+        self.filepath = fpath
+        self.filehander = FileHandler(fpath)
+        self.atom_style = atom_style
+        
+    def write(self, system):
+        
+        write = self.filehander.writeline
+        
+        #--- write comment ---
+        write('# '+system.comment)
+        write('\n\n')
+        
+        #--- write profile ---
+        write(f'    {system.natoms} atoms\n')
+        write(f'    {system.nbonds} bonds\n')
+        write(f'    {system.nangles} angles\n')
+        write(f'    {system.ndihedrals} dihedrals\n')
+        write(f'    {system.nimpropers} impropers\n')
+        write(f'    {system.natomTypes} atom types\n')
+        write(f'    {system.nbondTypes} bond types\n')
+        write(f'    {system.nangleTypes} angle types\n')
+        write(f'    {system.ndihedralTypes} dihedral types\n')
+        write(f'    {system.nimproperTypes} improper types\n')
+        
+        #--- write box ---
+        write(f'    {system.box[0]} {system.box[1]} xlo xhi\n')
+        write(f'    {system.box[2]} {system.box[3]} ylo yhi\n')
+        write(f'    {system.box[4]} {system.box[5]} zlo zhi\n')
+        write('\n')
+        
+        #--- write masses section ---
+        write('Masses\n\n')
+        for i, at in enumerate(system.atomTypes):
+            write(f'    {i}    {at.mass}  # {at.name}\n')
+        write('\n')
+        
+        #--- write atoms section ---
+        write('Atoms\n\n')
+        for i, at in enumerate(system.atoms):
+            write(f'    {i}    {at.mol}    {at.type}    {at.q}    {at.x}    {at.y}    {at.z}\n')
+        write('\n')
+        
+        #--- write bonds section ---
+        write('Bonds\n\n')
+        for i, b in enumerate(system.bonds):
+            write(f'    {i}    {b.type}    {b[0]}    {b[1]}\n')
+        write('\n')
+        
+        #--- write angle section ---
+        write('Angles\n\n')
+        for i, a in enumerate(system.angles):
+            write(f'    {i}    {a.type}    {a[0]}    {a[1]}    {a[2]}\n')
+        write('\n')
+            
+        #--- write dihedral section ---
+        write('Dihedrals\n\n')
+        for i, d in enumerate(system.dihedrals):
+            write(f'    {i}    {d.type}    {d[0]}    {d[1]}    {d[2]}    {d[3]}\n')
+        write('\n')
+    

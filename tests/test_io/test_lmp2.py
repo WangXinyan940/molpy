@@ -4,7 +4,10 @@
 # version: 0.0.1
 
 import pytest
+from molpy.atoms import Atoms
 from molpy.io.lmp2 import DumpReader, DataReader
+from molpy.modeller.randomWalk import RandomWalkOnFcc
+from molpy.system import System
 import numpy.testing as npt
 import numpy as np
 
@@ -27,7 +30,7 @@ class TestDump:
 class TestData:
     
     @pytest.fixture(scope='class', name='data')
-    def test_init(self):
+    def test_init_data(self):
         
         data = DataReader('tests/data/linear.data')
         yield data
@@ -51,4 +54,29 @@ class TestData:
         
         bonds = data['Bonds']
         assert bonds[0] == [1, 1, 1, 2]
+        
+    @pytest.fixture(scope='class', name='system')
+    def test_init_system(self):
+        
+        rw = RandomWalkOnFcc(10, 10, 10)
+        positions, topo = rw.linear(10, )
+        system = System('molpy IO test')
+        atoms = Atoms.fromDict(dict(positions=positions, type=np.ones(len(positions))), dict(topo=topo, bondTypes=np.ones(len(topo))))
+        # system.append(atoms)
+        system.atomManager.atoms = atoms
+        
+        assert system.natoms == 10
+        assert system.nbonds == 9
+        assert system.nangles == 8
+        assert system.ndihedrals == 7
+        
+        system.setBox(50, 50, 50)
+        ff = system.forcefield
+        
+        yield system
+        
+    def test_write(self, system):
+        
+        pass
+        
         

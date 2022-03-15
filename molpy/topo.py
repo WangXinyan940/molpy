@@ -38,6 +38,8 @@ class Topo:
         self._hasDihedral = False    
         self._hasAtom = False
         
+        self._bondTypes = None
+        
     def setTopo(self, connection):
         if connection is not None:
             if isinstance(connection, dict):
@@ -81,6 +83,14 @@ class Topo:
         bonds = np.unique(rawBonds, axis=0) 
         self._bonds = bonds
         return self._bonds
+    
+    def setBondTypes(self, bondtypes):
+        
+        if self._bondTypes is None or len(bondtypes) == len(self._bonds):
+        
+            self._bondTypes = np.array(bondtypes)
+        else:
+            raise ValueError
     
     @property
     def nbonds(self):

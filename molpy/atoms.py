@@ -25,6 +25,20 @@ class Atoms(Model):
     def fromAtoms(atoms):
         return Atoms(atoms.fields)
     
+    @staticmethod
+    def fromDict(atomFields, topoFields):
+        
+        atoms = Atoms(atomFields)
+        if 'topo' in topoFields:
+            atoms.topo.setTopo(topoFields['topo'])
+        
+        if 'bondTypes' in topoFields:
+            atoms.topo.setBondTypes(topoFields['bondTypes'])
+        
+
+        return atoms
+        
+    
     @property
     def atoms(self):
         return self.getAtoms()
