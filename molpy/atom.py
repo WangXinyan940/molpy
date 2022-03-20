@@ -14,3 +14,14 @@ class Atom(Model):
     def fromAtom(atom):
         pass
 
+    @property
+    def x(self):
+        return self.position[0]
+    
+    @property
+    def y(self):
+        return self.position[1]
+    
+    @property
+    def z(self):
+        return self.position[2]

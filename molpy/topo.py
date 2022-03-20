@@ -82,6 +82,7 @@ class Topo:
         rawBonds = np.sort(rawBonds, axis=1)
         bonds = np.unique(rawBonds, axis=0) 
         self._bonds = bonds
+        self._hasBond = True
         return self._bonds
     
     def setBondTypes(self, bondtypes):

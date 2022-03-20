@@ -5,7 +5,7 @@
 
 import pytest
 from molpy.atoms import Atoms
-from molpy.io.lmp2 import DumpReader, DataReader
+from molpy.io.lmp2 import DumpReader, DataReader, DataWriter
 from molpy.modeller.randomWalk import RandomWalkOnFcc
 from molpy.system import System
 import numpy.testing as npt
@@ -61,7 +61,7 @@ class TestData:
         rw = RandomWalkOnFcc(10, 10, 10)
         positions, topo = rw.linear(10, )
         system = System('molpy IO test')
-        atoms = Atoms.fromDict(dict(positions=positions, type=np.ones(len(positions))), dict(topo=topo, bondTypes=np.ones(len(topo))))
+        atoms = Atoms.fromDict(dict(position=positions, type=['c']*10, mol=[1]*10, q=[0.1]*10), dict(topo=topo, bondTypes=np.ones(len(topo))))
         # system.append(atoms)
         system.atomManager.atoms = atoms
         
@@ -73,10 +73,20 @@ class TestData:
         system.setBox(50, 50, 50)
         ff = system.forcefield
         
+        ff.defAtomType('c', mass=1)
+        ff.defBondType('cc', 'c', 'c')
+
+        
+        assert ff.natomTypes == 1
+        assert ff.nbondTypes == 1
+        
         yield system
         
     def test_write(self, system):
         
-        pass
-        
+        d = DataWriter('test.data')
+        d.write(system)
+        data = DataReader('test.data').getdata()
+        comment = data['comment']
+        atoms = data['atoms']
         

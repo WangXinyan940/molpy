@@ -21,6 +21,9 @@ class Atoms(Model):
         super().__init__(fields)
         self.topo = Topo()
         
+    def __iter__(self):
+        return self.atoms.__iter__()
+        
     @staticmethod
     def fromAtoms(atoms):
         return Atoms(atoms.fields)
@@ -70,14 +73,14 @@ class Atoms(Model):
         return atoms
 
     @property
-    def positions(self):
+    def position(self):
         if 'position' in self._fields:
             return self._fields['position']
         elif 'x' in self._fields and 'y' in self._fields and 'z' in self._fields:
             return self.mergeFields(['x', 'y', 'z'], 'position')
     
     @property
-    def masses(self):
+    def mass(self):
         if 'mass' in self._fields or 'masses' in self._fields:
             mass = self._fields['mass']
         else:
@@ -124,9 +127,9 @@ class Atoms(Model):
         bondIdx = self.topo.bonds
         if bondIdx is None:
             return []
-        
-        itoms = self.atoms[bondIdx[:, 0]]
-        jtoms = self.atoms[bondIdx[:, 1]]
+        atoms = np.array(self.atoms)
+        itoms = atoms[bondIdx[:, 0]]
+        jtoms = atoms[bondIdx[:, 1]]
         bonds = [Bond(itom, jtom) for itom, jtom in zip(itoms, jtoms)]
         return bonds
     
@@ -141,10 +144,10 @@ class Atoms(Model):
         angleIdx = self.topo.angles
         if angleIdx is None:
             return []
-        
-        itoms = self.atoms[angleIdx[:, 0]]
-        jtoms = self.atoms[angleIdx[:, 1]]
-        ktoms = self.atoms[angleIdx[:, 2]]
+        atoms = np.array(self.atoms)
+        itoms = atoms[angleIdx[:, 0]]
+        jtoms = atoms[angleIdx[:, 1]]
+        ktoms = atoms[angleIdx[:, 2]]
         angles = [Angle(itom, jtom, ktom) for itom, jtom, ktom in zip(itoms, jtoms, ktoms)]
         return angles
     
@@ -160,11 +163,11 @@ class Atoms(Model):
         dihedralIdx = self.topo.dihedrals
         if dihedralIdx is None:
             return []
-        
-        itoms = self.atoms[dihedralIdx[:, 0]]
-        jtoms = self.atoms[dihedralIdx[:, 1]]
-        ktoms = self.atoms[dihedralIdx[:, 2]] 
-        ltoms = self.atoms[dihedralIdx[:, 3]]    
+        atoms = np.array(self.atoms)
+        itoms = atoms[dihedralIdx[:, 0]]
+        jtoms = atoms[dihedralIdx[:, 1]]
+        ktoms = atoms[dihedralIdx[:, 2]] 
+        ltoms = atoms[dihedralIdx[:, 3]]    
         dihedrals = [Dihedral(itom, jtom, ktom, ltom) for itom, jtom, ktom, ltom in zip(itoms, jtoms, ktoms, ltoms)]
         
         return dihedrals
@@ -176,11 +179,23 @@ class Atoms(Model):
     def getDihedralIdx(self)->List[List]:
         return self.topo.dihedrals
     
+    # @property
+    # def nimpropers(self)->int:
+    #     return self.topo.nimpropers
+    
+    # def getImproperIdx(self)->List[List]:
+    #     return self.topo.impropers
+    
+    # def getImpropers(self)->List[Improper]:
+    #     pass
+    
     def append(self, atoms):
         
         if len(self._fields):
             # validation
             assert len(atoms._fields) == len(self._fields), ValueError(f'Number of fields in atoms ({len(atoms._fields)}) does not match number of fields in self ({len(self._fields)})')
+            
+        natoms = self.natoms
         
         for key, value in atoms._fields.items():
             
@@ -188,6 +203,7 @@ class Atoms(Model):
                 np.append(self._fields[key], value)
             else:
                 self._fields[key] = value
+        
         
         
 class AtomManager:
@@ -224,3 +240,8 @@ class AtomManager:
     def append(self, atoms):
         
         self.atoms.append(atoms)
+        
+    @property
+    def bonds(self):
+        return self.atoms.getBonds()
+        

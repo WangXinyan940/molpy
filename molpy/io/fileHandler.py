@@ -9,13 +9,16 @@ import re
 
 class FileHandler:
     
-    def __init__(self, filepath):
+    def __init__(self, filepath, mode='r'):
         
         self.filepath = filepath
-        self.fp = open(self.filepath, 'r')
+        self.fp = open(self.filepath, mode)
         
     def readline(self):
         return self.fp.readline()
+    
+    def writeline(self, line):
+        return self.fp.write(line)
         
     def getline(self, lineno):
         return linecache.getline(self.filepath, lineno)

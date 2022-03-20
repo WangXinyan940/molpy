@@ -42,7 +42,11 @@ class Model:
         return len(self._fields.values())
         
     def __getattr__(self, field):
-        return self._fields[field]
+        ans = self._fields.get(field, 'undifined')
+        if ans == 'undifined':
+            return super().__getattribute__(field)
+        else:
+            return ans
     
     def __setattr__(self, field, value):
         

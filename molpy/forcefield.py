@@ -23,11 +23,19 @@ class AtomTypes(dict):
     
     def getAll(self):
         return list(self.values())
+    
+    def __len__(self) -> int:
+        return super().__len__()
+    
+    def __iter__(self):
+        return list(self.values()).__iter__()
+    
         
 class BondTypes:
     
     def __init__(self) -> None:
         super().__setattr__('bondMatrix', {})
+        self.nbondTypes = 0
         
     def __getitem__(self, key):
         
@@ -43,6 +51,7 @@ class BondTypes:
         atomType1, atomType2 = keys
         self.bondMatrix.setdefault(atomType1, {})[atomType2] = bondType
         self.bondMatrix.setdefault(atomType2, {})[atomType1] = bondType
+        self.nbondTypes += 1
         
     def getAll(self):
         tmpSet = set()
@@ -50,6 +59,12 @@ class BondTypes:
             for at2 in self.bondMatrix[at1]:
                 tmpSet.add(self.bondMatrix[at1][at2])
         return list(tmpSet)
+    
+    def __len__(self):
+        return self.nbondTypes
+    
+    def __iter__(self):
+        return self.getAll().__iter__()
         
 class BaseType:
     
@@ -79,7 +94,7 @@ class AtomType(BaseType):
         
     def match(self, tag):
         
-        if tag == self.properties['name'] or tag == self.properties['class_'] or tag == self:
+        if tag == self.properties.get('name', None) or tag == self.properties.get('class_', None) or tag == self:
             return True
         return False
         
@@ -156,6 +171,19 @@ class Forcefield:
             name = bt.attrib.pop('name')
             self.defBondType(name, **bt.attrib)
             
+    @property
+    def natomTypes(self):
+        return len(self.atomTypes)
+    
+    @property
+    def nbondTypes(self):
+        return len(self.bondTypes)
         
-        
+    @property
+    def nangleTypes(self):
+        return len(self.nangleTypes)
+    
+    @property
+    def ndihedralTypes(self):
+        return len(self.ndihedralTypes)
         

@@ -219,7 +219,7 @@ class DataWriter:
     def __init__(self, fpath:str, atom_style='full'):
         
         self.filepath = fpath
-        self.filehander = FileHandler(fpath)
+        self.filehander = FileHandler(fpath, 'w')
         self.atom_style = atom_style
         
     def write(self, system):
@@ -233,19 +233,20 @@ class DataWriter:
         #--- write profile ---
         write(f'    {system.natoms} atoms\n')
         write(f'    {system.nbonds} bonds\n')
-        write(f'    {system.nangles} angles\n')
-        write(f'    {system.ndihedrals} dihedrals\n')
-        write(f'    {system.nimpropers} impropers\n')
+        # write(f'    {system.nangles} angles\n')
+        # write(f'    {system.ndihedrals} dihedrals\n')
+        # write(f'    {system.nimpropers} impropers\n')
         write(f'    {system.natomTypes} atom types\n')
         write(f'    {system.nbondTypes} bond types\n')
-        write(f'    {system.nangleTypes} angle types\n')
-        write(f'    {system.ndihedralTypes} dihedral types\n')
-        write(f'    {system.nimproperTypes} improper types\n')
+        # write(f'    {system.nangleTypes} angle types\n')
+        # write(f'    {system.ndihedralTypes} dihedral types\n')
+        # write(f'    {system.nimproperTypes} improper types\n')
+        write('\n')
         
         #--- write box ---
-        write(f'    {system.box[0]} {system.box[1]} xlo xhi\n')
-        write(f'    {system.box[2]} {system.box[3]} ylo yhi\n')
-        write(f'    {system.box[4]} {system.box[5]} zlo zhi\n')
+        write(f'    {system.box.xlo} {system.box.xhi} xlo xhi\n')
+        write(f'    {system.box.ylo} {system.box.yhi} ylo yhi\n')
+        write(f'    {system.box.zlo} {system.box.zhi} zlo zhi\n')
         write('\n')
         
         #--- write masses section ---

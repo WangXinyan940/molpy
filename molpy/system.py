@@ -32,6 +32,10 @@ class System:
     @property
     def atoms(self):
         return self._atomManager.atoms
+    
+    @property
+    def bonds(self):
+        return self._atomManager.bonds
 
     @property
     def topo(self):
@@ -60,6 +64,34 @@ class System:
     @property
     def ndihedrals(self):
         return self.atoms.ndihedrals
+    
+    @property
+    def nimpropers(self):
+        return self.atoms.nimpropers
+    
+    @property
+    def natomTypes(self):
+        return self._forcefield.natomTypes
+    
+    @property
+    def nbondTypes(self):
+        return self._forcefield.nbondTypes
+    
+    @property
+    def nangleTypes(self):
+        return self._forcefield.nangleTypes
+    
+    @property
+    def ndihedralTypes(self):
+        return self._forcefield.ndihedralTypes
+    
+    @property
+    def atomTypes(self):
+        return self._forcefield.atomTypes
+    
+    @property
+    def bondTypes(self):
+        return self._forcefield.bondTypes
 
     def getAtoms(self):
         return self.atoms

@@ -18,3 +18,28 @@ class Box(freud.Box):
                                        xz=self.xz,
                                        yz=self.yz,
                                        is2D=self.is2D)
+                
+    @property
+    def xlo(self):
+        return 0
+    
+    @property
+    def xhi(self):
+        return self.Lx
+    
+    @property
+    def ylo(self):
+        return 0
+    
+    @property
+    def yhi(self):
+        return self.Ly
+    
+    @property
+    def zlo(self):
+        return 0
+    
+    @property
+    def zhi(self):
+        return self.Lz
+    
