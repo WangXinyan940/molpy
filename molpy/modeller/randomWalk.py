@@ -28,6 +28,8 @@ class RandomWalkOnFcc(RandomWalk):
         # self._site_size = np.array((siteX, siteY, siteZ, 4))
         self._sites = np.zeros((siteX, siteY, siteZ, 4), dtype=np.int8)
         
+        self.scaleFactor = stepLength / np.cos(np.pi/4)
+        
     def findStart(self):
         
         while True:
@@ -175,7 +177,7 @@ class RandomWalkOnFcc(RandomWalk):
             _offset = 0 if i ==0 else length_list[i-1]
             _offset += offset
             positions, bonds = self.walkOnce(start, length, offset=_offset)
-            pos_list.append(positions)
+            pos_list.append(positions*self.scaleFactor)
             bond_list.append(bonds)
             
         return pos_list, bond_list
@@ -183,7 +185,7 @@ class RandomWalkOnFcc(RandomWalk):
     def linear(self, length, offset=0):
         start = self.findStart()
         positions, bonds = self.walkOnce(start, length, offset)
-        return positions, bonds
+        return positions*self.scaleFactor, bonds
     
     def graft(self, main_length, graft_length, graft_point, offset=0):
         
@@ -207,5 +209,5 @@ class RandomWalkOnFcc(RandomWalk):
             bond_list.append(g_bond)
             offset += gLen
 
-        return np.concatenate(pos_list), np.concatenate(bond_list) 
+        return np.concatenate(pos_list)*self.scaleFactor, np.concatenate(bond_list) 
 

@@ -8,9 +8,10 @@ from molpy.interaction import register
 
 class Bond:
     
-    def __init__(self, itom, jtom):
+    def __init__(self, itom, jtom, type=None):
         self.itom = itom
         self.jtom = jtom
+        self.type = type
         
     def getLength(self):
         
@@ -22,4 +23,8 @@ class Bond:
         b = bondStyle(**bondType.properties)
         self.getEnergy = b.getEnergy
         self.getForce = b.getForce
+        
+    def __getitem__(self, o):
+        tmp = [self.itom, self.jtom]
+        return tmp[o]
         

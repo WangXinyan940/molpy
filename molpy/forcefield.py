@@ -30,6 +30,9 @@ class AtomTypes(dict):
     def __iter__(self):
         return list(self.values()).__iter__()
     
+    def defAtomType(self, atomType):
+        self[atomType.name] = atomType
+    
         
 class BondTypes:
     
@@ -86,11 +89,8 @@ class BaseType:
         
 class AtomType(BaseType):
     
-    typeId = 1
-    
     def __init__(self, name) -> None:
         super().__init__(name)
-        AtomType.typeId += 1
         
     def match(self, tag):
         
@@ -100,11 +100,8 @@ class AtomType(BaseType):
         
 class BondType(BaseType):
     
-    typeId = 1
-    
     def __init__(self, name) -> None:
         super().__init__(name)
-        BondType.typeId += 1
 
 class Forcefield:
     

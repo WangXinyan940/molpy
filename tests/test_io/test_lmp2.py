@@ -39,7 +39,7 @@ class TestData:
         
         line = '\t60 Atom\n# comment'
         line = DataReader.parse_line(line)
-        assert line == ['60', 'Atom']
+        assert line == ('60', 'Atom')
         
         line = ''
         line = DataReader.parse_line(line)
@@ -53,7 +53,11 @@ class TestData:
         npt.assert_allclose(np.asfarray(list(atoms[-1])), np.array('60	33	6	-11.8000	40.2637	47.8022	 6.3059'.split(), dtype=float))
         
         bonds = data['Bonds']
-        assert bonds[0] == [1, 1, 1, 2]
+        bond = bonds[0]
+        assert bond[0] == 1
+        assert bond[1] == 1
+        assert bond[2] == 1
+        assert bond[3] == 2
         
     @pytest.fixture(scope='class', name='system')
     def test_init_system(self):
@@ -61,7 +65,7 @@ class TestData:
         rw = RandomWalkOnFcc(10, 10, 10)
         positions, topo = rw.linear(10, )
         system = System('molpy IO test')
-        atoms = Atoms.fromDict(dict(position=positions, type=['c']*10, mol=[1]*10, q=[0.1]*10), dict(topo=topo, bondTypes=np.ones(len(topo))))
+        atoms = Atoms.fromDict(dict(id=np.arange(len(positions), dtype=int)+1, position=positions, type=['c']*10, mol=[1]*10, q=[0.1]*10), dict(topo=topo, bondTypes=np.ones(len(topo), dtype=int)))
         # system.append(atoms)
         system.atomManager.atoms = atoms
         
@@ -85,7 +89,7 @@ class TestData:
     def test_write(self, system):
         
         d = DataWriter('test.data')
-        d.write(system)
+        d.write(system, isAngles=False, isDihedrals=False)
         data = DataReader('test.data').getdata()
         comment = data['comment']
         atoms = data['atoms']

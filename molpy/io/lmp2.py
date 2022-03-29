@@ -89,39 +89,37 @@ class DataReader:
         self.atom_style = atom_style
         
     def getdata(self):
-        
+        data = {}
         lines = self.filehander.readlines()
-        data = DataReader.parse(lines, self.atom_style)
+        data['comment'] = lines[0]
+        lines = map(lambda line: DataReader.parse_line(line), lines)
+        lines = list(filter(lambda line: line != (), lines))
+        data.update(DataReader.parse(lines, self.atom_style))
         return data
         
     @staticmethod
     def parse_line(line:str):
         
-        return line.partition('#')[0].split()
+        return tuple(line.partition('#')[0].split())
         
     @staticmethod
     def parse(lines:List[str], atom_style:str='full'):
         
         data = {}
-        
-        data['comment'] = lines[0]
-        
-        for i, line in enumerate(lines[2:14]):
-            
-            line = DataReader.parse_line(line)
+
+        for i, line in enumerate(lines):
             
             for field, type in DATA_TYPES.items():
                 
                 if line[-1] == field:
                     data[field] = type(line[0])
                     break
-                
+            
             if line[-1] == 'xhi':
                 break
                 
-        for line in lines[i+2:i+5]:
-            
-            line = DataReader.parse_line(line)
+                
+        for line in lines[i:i+3]:
             
             if line[-1] == 'xhi':
                 xlo = float(line[0])
@@ -140,14 +138,13 @@ class DataReader:
         section_start_lineno = {}
         
         for lino, line in enumerate(lines):
-            
-            line = DataReader.parse_line(line)
+
             if line and line[0] in SECTIONS:
                 section_start_lineno[line[0]] = lino
            
                     
         #--- parse atoms ---
-        atom_section_starts = section_start_lineno['Atoms'] + 2
+        atom_section_starts = section_start_lineno['Atoms'] + 1
         atom_section_ends = atom_section_starts + data['atoms']
         
         atomInfo = DataReader.parse_atoms(lines[atom_section_starts:atom_section_ends], atom_style=atom_style)
@@ -155,7 +152,7 @@ class DataReader:
                     
         #--- parse bonds ---
         if 'Bonds' in section_start_lineno:
-            bond_section_starts = section_start_lineno['Bonds'] + 2
+            bond_section_starts = section_start_lineno['Bonds'] + 1
             bond_section_ends = bond_section_starts + data['bonds'] + 1
             
             bondInfo = DataReader.parse_bonds(lines[bond_section_starts:bond_section_ends])
@@ -163,14 +160,14 @@ class DataReader:
         
         # #--- parse angles ---
         if 'Angles' in section_start_lineno:
-            angles_section_starts = section_start_lineno['Angles'] + 2
+            angles_section_starts = section_start_lineno['Angles'] + 1
             angles_section_ends = angles_section_starts + data['angles'] + 1
             angleInfo = DataReader.parse_angles(lines[angles_section_starts:angles_section_ends])
             data['Angles'] = angleInfo
         
         # #--- parse dihedrals ---
         if 'Dihedrals' in section_start_lineno:
-            dihedrals_section_starts = section_start_lineno['Dihedrals'] + 2
+            dihedrals_section_starts = section_start_lineno['Dihedrals'] + 1
             dihedrals_section_ends = dihedrals_section_starts + data['dihedrals'] + 1
             dihedralInfo = DataReader.parse_dihedrals(lines[dihedrals_section_starts:dihedrals_section_ends])
             data['Dihedrals'] = dihedralInfo
@@ -192,27 +189,25 @@ class DataReader:
                 ('z', float)
             ])
         }
-        
-        l = list(map(lambda x: tuple(x.split()), lines))
-        
-        atomInfo = np.array(l, dtype=atom_style_types[atom_style])
+        # lines = list(map(lambda line: tuple(line), lines))
+        atomInfo = np.array(lines, dtype=atom_style_types[atom_style])
         
         return atomInfo
     
     @staticmethod
     def parse_bonds(lines:List[str]):
-        
-        return list(map(lambda x: list(map(int, x.split())), lines))
+
+        return np.array(lines, dtype=[('id', int), ('type', int), ('itom', int), ('jtom', int)])
     
     @staticmethod
     def parse_angles(lines:List[str]):
         
-        return list(map(lambda x: list(map(int, x.split())), lines))
+        return np.array(lines, dtype=[('id', int), ('type', int), ('itom', int), ('jtom', int), ('ktom', int)])
 
     @staticmethod
     def parse_dihedrals(lines:List[str]):
         
-        return list(map(lambda x: list(map(int, x.split())), lines))
+        return np.array(lines, dtype=[('id', int), ('type', int), ('itom', int), ('jtom', int), ('ktom', int), ('ltom', int)])
     
 class DataWriter:
     
@@ -222,7 +217,7 @@ class DataWriter:
         self.filehander = FileHandler(fpath, 'w')
         self.atom_style = atom_style
         
-    def write(self, system):
+    def write(self, system, isBonds=True, isAngles=True, isDihedrals=True):
         
         write = self.filehander.writeline
         
@@ -251,31 +246,47 @@ class DataWriter:
         
         #--- write masses section ---
         write('Masses\n\n')
+        id = np.arange(system.natomTypes) + 1
         for i, at in enumerate(system.atomTypes):
-            write(f'    {i}    {at.mass}  # {at.name}\n')
+            write(f'    {id[i]}    {at.mass}  # {at.name}\n')
         write('\n')
         
         #--- write atoms section ---
         write('Atoms\n\n')
+        if 'id' not in system.atomManager.atoms:
+            id = np.arange(system.natoms) + 1
+        else:
+            id = system.atomManager.atoms._fields['id']
+        
+        type_map = {}
+            
         for i, at in enumerate(system.atoms):
-            write(f'    {i}    {at.mol}    {at.type}    {at.q}    {at.x}    {at.y}    {at.z}\n')
+            if not isinstance(at.type, int):
+                type = type_map.get(at.type, len(type_map)) + 1
+            write(f'    {id[i]}    {at.mol}    {type}    {at.q}    {at.x:.4f}    {at.y:.4f}    {at.z:.4f}\n')
         write('\n')
         
         #--- write bonds section ---
-        write('Bonds\n\n')
-        for i, b in enumerate(system.bonds):
-            write(f'    {i}    {b.type}    {b[0]}    {b[1]}\n')
-        write('\n')
+        if isBonds:
+            id = np.arange(system.nbonds) + 1
+            write('Bonds\n\n')
+            for i, b in enumerate(system.bonds):
+                write(f'    {id[i]}    {b.type}    {b[0].id}    {b[1].id}\n')
+            write('\n')
         
         #--- write angle section ---
-        write('Angles\n\n')
-        for i, a in enumerate(system.angles):
-            write(f'    {i}    {a.type}    {a[0]}    {a[1]}    {a[2]}\n')
-        write('\n')
+        if isAngles:
+            write('Angles\n\n')
+            for a in system.angles:
+                write(f'    {a.id}    {a.type}    {a[0]}    {a[1]}    {a[2]}\n')
+            write('\n')
             
         #--- write dihedral section ---
-        write('Dihedrals\n\n')
-        for i, d in enumerate(system.dihedrals):
-            write(f'    {i}    {d.type}    {d[0]}    {d[1]}    {d[2]}    {d[3]}\n')
-        write('\n')
+        if isDihedrals:
+            write('Dihedrals\n\n')
+            for d in system.dihedrals:
+                write(f'    {a.id}    {d.type}    {d[0]}    {d[1]}    {d[2]}    {d[3]}\n')
+            write('\n')
+        
+        self.filehander.close()    
     

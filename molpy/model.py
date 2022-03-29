@@ -3,6 +3,7 @@
 # date: 2022-01-07
 # version: 0.0.2
 
+from typing import Optional
 import numpy as np
 import warnings
 
@@ -12,7 +13,8 @@ class Model:
         super().__setattr__('_fields', {})
         super().__setattr__('name', id(self))
         if fields is not None:
-            self._fields.update(fields)
+            if self.isAlign(fields):
+                self._fields.update(fields)
             
     @staticmethod
     def fromModel(model):
@@ -34,10 +36,6 @@ class Model:
         return self.__len__()
     
     @property
-    def type(self):
-        return self.__class__.__name__
-    
-    @property
     def nfields(self):
         return len(self._fields.values())
         
@@ -56,9 +54,12 @@ class Model:
         else:
             super().__setattr__(field, value)
             
-    def isAlign(self):
+    def isAlign(self, fields:Optional[dict]=None):
+        
+        if fields is None:
+            fields = self._fields.values()
                 
-        field_lengths = np.asarray(tuple(map(len, self._fields.values())))
+        field_lengths = np.asarray(tuple(map(len, fields)))
         if (field_lengths == 0).all():
             return True
         elif (field_lengths == 0).any():

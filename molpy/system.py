@@ -36,6 +36,14 @@ class System:
     @property
     def bonds(self):
         return self._atomManager.bonds
+    
+    @property
+    def angles(self):
+        return self._atomManager.angles
+    
+    @property
+    def dihedrals(self):
+        return self._atomManager.dihedrals
 
     @property
     def topo(self):

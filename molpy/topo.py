@@ -66,7 +66,7 @@ class Topo:
             connection[bond[1]].append(bond[0])
         return dict(connection), conect, None
         
-    def getBonds(self):
+    def getBonds(self)->np.ndarray:
         
         if self._hasBond:
             return self._bonds
@@ -95,11 +95,10 @@ class Topo:
     
     @property
     def nbonds(self):
-        if not self._hasBond:
-            self.getBonds()
+        self.getBonds()
         return len(self._bonds)
     
-    def getAngles(self):
+    def getAngles(self)->np.ndarray:
         
         if self._hasAngle:
             return self._angles
@@ -121,8 +120,7 @@ class Topo:
     
     @property
     def nangles(self):
-        if not self._hasAngle:
-            self.getAngles()
+        self.getAngles()
         return len(self._angles)
     
     def getDihedrals(self):
@@ -152,9 +150,8 @@ class Topo:
         return dihedrals
     
     @property
-    def ndihedrals(self):
-        if not self._hasDihedral:
-            self.getDihedrals()
+    def ndihedrals(self)->np.ndarray:
+        self.getDihedrals()
         return len(self._dihedrals)
     
     bonds = property(getBonds)
