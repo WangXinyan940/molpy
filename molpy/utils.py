@@ -17,6 +17,6 @@ def fromDictToStruct(d:dict):
         
     return arr
 
-def fromStructToDict(arr):
+def fromStructToDict(arr:np.ndarray):
     return {k: arr[k] for k in arr.dtype.names}
 

@@ -3,25 +3,7 @@
 # date: 2022-01-07
 # version: 0.0.1
 
-from .model import Model
+class Atom:
 
-class Atom(Model):
-    
-    def __init__(self, fields:dict=None):
-        super().__init__(fields)
-        
-    @staticmethod
-    def fromAtom(atom):
+    def __init__(self, name=None) -> None:
         pass
-
-    @property
-    def x(self):
-        return self.position[0]
-    
-    @property
-    def y(self):
-        return self.position[1]
-    
-    @property
-    def z(self):
-        return self.position[2]

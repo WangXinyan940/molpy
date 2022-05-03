@@ -4,26 +4,23 @@
 # version: 0.0.2
 
 
-from molpy.atoms import AtomManager, Atoms
+from molpy.atom import Atom
+from molpy.atoms import AtomVec, Atoms
 from molpy.forcefield import Forcefield
 from molpy.io.lmp import DataReader, DumpReader
 from molpy.neighborlist import NeighborList
 from molpy.pair import Pair
 from molpy.box import Box
+from typing import List
 
 
 class System:
     def __init__(self, comment=""):
 
-        self._atomManager = AtomManager()
-        # self._atoms = self._atomManager.atoms
+        self.atomVec = AtomVec()
         self._box = None
         self._forcefield = Forcefield()
         self.comment = comment
-
-    @property
-    def atomManager(self):
-        return self._atomManager
     
     @property
     def forcefield(self):
@@ -31,23 +28,23 @@ class System:
 
     @property
     def atoms(self):
-        return self._atomManager.atoms
+        return self.atomVec.atoms
     
     @property
     def bonds(self):
-        return self._atomManager.bonds
+        return self.atomVec.atoms.bonds
     
     @property
     def angles(self):
-        return self._atomManager.angles
+        return self.atomVec.atoms.angles
     
     @property
     def dihedrals(self):
-        return self._atomManager.dihedrals
+        return self.atomVec.atoms.dihedrals
 
     @property
     def topo(self):
-        return self.atoms.topo
+        return self.atomVec.atoms.topo
 
     @property
     def box(self):
@@ -59,23 +56,23 @@ class System:
 
     @property
     def natoms(self):
-        return self.atoms.natoms
+        return self.atomVec.atoms.natoms
 
     @property
     def nbonds(self):
-        return self.atoms.nbonds
+        return self.atomVec.atoms.nbonds
 
     @property
     def nangles(self):
-        return self.atoms.nangles
+        return self.atomVec.atoms.nangles
 
     @property
     def ndihedrals(self):
-        return self.atoms.ndihedrals
+        return self.atomVec.atoms.ndihedrals
     
     @property
     def nimpropers(self):
-        return self.atoms.nimpropers
+        return self.atomVec.atoms.nimpropers
     
     @property
     def natomTypes(self):
@@ -101,17 +98,17 @@ class System:
     def bondTypes(self):
         return self._forcefield.bondTypes
 
-    def getAtoms(self):
-        return self.atoms
+    def getAtoms(self)->List[Atom]:
+        return self.atomVec.atoms.atoms
 
     def getBonds(self):
-        return self.atoms.getBonds()
+        return self.atomVec.atoms.getBonds()
 
     def getAngles(self):
-        return self.atoms.getAngles()
+        return self.atomVec.atoms.getAngles()
 
     def getDihedrals(self):
-        return self.atoms.getDihedrals()
+        return self.atomVec.atoms.getDihedrals()
 
     def getPairs(self, cutoff=None):
         if cutoff is None:
@@ -131,39 +128,50 @@ class System:
     def loadData(self, dataFile, atom_style="full"):
 
         data_reader = DataReader(dataFile, atom_style=atom_style)
-        data_reader.parse()
-        atomData = data_reader.atoms
-        bondData = data_reader.bonds
-        self.loadAtoms(atomData, bondData)
+        atoms = data_reader.getAtoms()
+        self.atomVec.atoms = atoms
+        return atoms
 
     def loadAtoms(self, atomData, bondData):
         atoms = Atoms(fields=atomData)
         atoms.fromStructuredArray(atomData)
         atoms.setTopo(bondData)
-        self._atomManager.atoms = atoms
+        self.atomVec.atoms = atoms
 
     def loadTraj(self, dumpFile):
 
         self._traj = DumpReader(dumpFile)
-        # pre_parse()
-        self.nframes = self._traj.nframes
+        self.nFrames = self._traj.nFrames
+        return self._traj
 
-    def selectFrame(self, nframe):
+    def selectFrame(self, nFrame):
 
-        frame = self._traj.parse(nframe)
-        self.atoms.fromStructuredArray(frame)
-
-        box = self._traj.box
-        box = list(map(float, box))
+        frame = self._traj.getFrame(nFrame)
+        atoms = frame['Atoms']
+        
+        for k in atoms.dtype.names:
+            self.atomVec.atoms.nodes[k] = atoms[k]
+        
+        box = frame['box']
         self._box = Box(box[1] - box[0], box[3] - box[2], box[5] - box[4])
 
     def getAtomsStructuredArray(self):
         return self.atoms.toStructuredArray()
 
     def append(self, atoms):
-        self._atomManager.append(atoms)
+        self.atomVec.append(atoms)
 
     def setBox(self, lx, ly, lz, xy=0, xz=0, yz=0):
         self._box = Box(lx, ly, lz, xy, xz, yz)
 
+    def sample(self, start, stop, interval):
+        
+        assert self._traj, AttributeError('Trajectory not loaded')
+        assert stop < self.nFrames, ValueError('Stop frame is larger than the number of frames')
+        assert start > 0, ValueError('Start frame is larger than the number of frames')
+        assert isinstance(interval, int), TypeError('Interval must be an integer')
+        
+        for nFrame in range(start, stop, interval):
+            self.selectFrame(nFrame)
+            yield self
 

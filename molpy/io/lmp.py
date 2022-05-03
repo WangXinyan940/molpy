@@ -1,357 +1,309 @@
 # author: Roy Kid
 # contact: lijichen365@126.com
-# date: 2022-01-09
+# date: 2022-03-12
 # version: 0.0.1
+
+__all__ = [
+    'DataReader',
+    'DataWriter',
+    'DumpReader'
+]
+
+from typing import List
 import numpy as np
-from .base import ReaderBase, ReaderTrajBase, WriterBase
+from molpy.atoms import Atoms
+from molpy.io.fileHandler import FileHandler
+from molpy.utils import fromStructToDict
+
+DUMP_TYPES = {
+    
+    'id': int,
+    'mol': int,
+    'type': int,
+    'q': float,
+    'x': float,
+    'y': float,
+    'z': float,
+
+}
 
 
-# Sections will all start with one of these words
-# and run until the next section title
-SECTIONS = set([
-    'Atoms',  # Molecular topology sections
-    'Velocities',
-    'Masses',
-    'Ellipsoids',
-    'Lines',
-    'Triangles',
-    'Bodies',
-    'Bonds',  # Forcefield sections
-    'Angles',
-    'Dihedrals',
-    'Impropers',
-    'Pair',
-    'Pair LJCoeffs',
-    'Bond Coeffs',
-    'Angle Coeffs',
-    'Dihedral Coeffs',
-    'Improper Coeffs',
-    'BondBond Coeffs',  # Class 2 FF sections
-    'BondAngle Coeffs',
-    'MiddleBondTorsion Coeffs',
-    'EndBondTorsion Coeffs',
-    'AngleTorsion Coeffs',
-    'AngleAngleTorsion Coeffs',
-    'BondBond13 Coeffs',
-    'AngleAngle Coeffs',
-])
-# We usually check by splitting around whitespace, so check
-# if any SECTION keywords will trip up on this
-# and add them
-for val in list(SECTIONS):
-    if len(val.split()) > 1:
-        SECTIONS.add(val.split()[0])
+class DumpReader:
+    
+    def __init__(self, fpath:str):
+        
+        self.filepath = fpath
+        self.filehandler = FileHandler(fpath)
+        self.chunks = self.filehandler.readchunks('ITEM: TIMESTEP')
+        
+    def getFrame(self, index):
+        
+        chunk = self.chunks.getchunk(index)
+        
+        return DumpReader.parse(chunk)
+    
+    @property
+    def nFrames(self):
+        return self.chunks.nchunks
+        
+    @staticmethod
+    def parse(chunk:List[str]):
+        
+        data = {}
+        
+        data['timestep'] = int(chunk[1])
+        data['natoms'] = int(chunk[3])
+        xlo, xhi = [float(x) for x in chunk[5].split()]
+        ylo, yhi = [float(x) for x in chunk[6].split()]
+        zlo, zhi = [float(x) for x in chunk[7].split()]
+        data['box'] = [xlo, xhi, ylo, yhi, zlo, zhi]
+        
+        header = chunk[8].split()[2:]
+        
+        m = map(lambda x: tuple(x.split()), chunk[9:])
+        lm = list(m)
+        atomArr = np.array(lm, dtype={'names': header, 'formats': [DUMP_TYPES.get(k, float) for k in header]})
+        
+        data['Atoms'] = atomArr
+        
+        return data
+       
+       
+SECTIONS = [
+    'Masses', 'Atoms', 'Bonds', 'Angles', 'Dihedrals', 'Impropers'
+]
 
+DATA_TYPES = {
+    'atoms': int,
+    'bonds': int,
+    'angles': int,
+    'dihedrals': int,
+    'impropers': int,
+    'atom types': int,
+    'bond types': int,
+    'angle types': int,
+    'dihedral types': int,
+    'improper types': int,
+}
+           
+class DataReader:
+    
+    def __init__(self, fpath:str, atom_style:str='full'):
+        
+        self.filepath = fpath
+        self.filehander = FileHandler(fpath)
+        self.atom_style = atom_style
+        
+    def getData(self):
+        data = {}
+        lines = self.filehander.readlines()
+        data['comment'] = lines[0]
+        lines = map(lambda line: DataReader.parse_line(line), lines)
+        lines = list(filter(lambda line: line != (), lines))
+        data.update(DataReader.parse(lines, self.atom_style))
+        return data
+    
+    def getAtoms(self):
+        
+        data = self.getData()
+        nodes = fromStructToDict(data['Atoms'])
+        edges = {'bondType': data['Bonds']['type']}
+        topo = [[i, j] for i, j in zip(data['Bonds']['itom'], data['Bonds']['jtom'])]
+        atoms = Atoms.fromDict(nodes, edges, {}, topo)
+        assert data['atoms'] == nodes['id'].__len__()
+        return atoms
+        
+        
+    @staticmethod
+    def parse_line(line:str):
+        
+        return tuple(line.partition('#')[0].split())
+        
+    @staticmethod
+    def parse(lines:List[str], atom_style:str='full'):
+        
+        data = {}
 
-HEADERS = set([
-    'atoms',
-    'bonds',
-    'angles',
-    'dihedrals',
-    'impropers',
-    'atom types',
-    'bond types',
-    'angle types',
-    'dihedral types',
-    'improper types',
-    'extra bond per atom',
-    'extra angle per atom',
-    'extra dihedral per atom',
-    'extra improper per atom',
-    'extra special per atom',
-    'ellipsoids',
-    'lines',
-    'triangles',
-    'bodies',
-    'xlo xhi',
-    'ylo yhi',
-    'zlo zhi',
-    'xy xz yz',
-])
+        for i, line in enumerate(lines):
+            
+            for field, type in DATA_TYPES.items():
+                
+                if line[-1] == field:
+                    data[field] = type(line[0])
+                    break
+            
+            if line[-1] == 'xhi':
+                break
+                
+                
+        for line in lines[i:i+3]:
+            
+            if line[-1] == 'xhi':
+                xlo = float(line[0])
+                xhi = float(line[1])
+                
+            elif line[-1] == 'yhi':
+                ylo = float(line[0])
+                yhi = float(line[1])
+                
+            elif line[-1] == 'zhi':
+                zlo = float(line[0])
+                zhi = float(line[1])
+        
+        data['box'] = [xlo, xhi, ylo, yhi, zlo, zhi]
+        
+        section_start_lineno = {}
+        
+        for lino, line in enumerate(lines):
 
-
-class LAMMPSIO:
+            if line and line[0] in SECTIONS:
+                section_start_lineno[line[0]] = lino
+           
+                    
+        #--- parse atoms ---
+        atom_section_starts = section_start_lineno['Atoms'] + 1
+        atom_section_ends = atom_section_starts + data['atoms']
+        
+        atomInfo = DataReader.parse_atoms(lines[atom_section_starts:atom_section_ends], atom_style=atom_style)
+        data['Atoms'] = atomInfo
+                    
+        #--- parse bonds ---
+        if 'Bonds' in section_start_lineno:
+            bond_section_starts = section_start_lineno['Bonds'] + 1
+            bond_section_ends = bond_section_starts + data['bonds'] + 1
+            
+            bondInfo = DataReader.parse_bonds(lines[bond_section_starts:bond_section_ends])
+            data['Bonds'] = bondInfo
+        
+        # #--- parse angles ---
+        if 'Angles' in section_start_lineno:
+            angles_section_starts = section_start_lineno['Angles'] + 1
+            angles_section_ends = angles_section_starts + data['angles'] + 1
+            angleInfo = DataReader.parse_angles(lines[angles_section_starts:angles_section_ends])
+            data['Angles'] = angleInfo
+        
+        # #--- parse dihedrals ---
+        if 'Dihedrals' in section_start_lineno:
+            dihedrals_section_starts = section_start_lineno['Dihedrals'] + 1
+            dihedrals_section_ends = dihedrals_section_starts + data['dihedrals'] + 1
+            dihedralInfo = DataReader.parse_dihedrals(lines[dihedrals_section_starts:dihedrals_section_ends])
+            data['Dihedrals'] = dihedralInfo
+        
+        
+        return data
+        
+    @staticmethod
+    def parse_atoms(lines:List[str], atom_style='full'):
+        
+        atom_style_types = {
+            'full': np.dtype([
+                ('id', int),
+                ('mol', int),
+                ('type', int),
+                ('q', float),
+                ('x', float),
+                ('y', float),
+                ('z', float)
+            ])
+        }
+        # lines = list(map(lambda line: tuple(line), lines))
+        atomInfo = np.array(lines, dtype=atom_style_types[atom_style])
+        
+        return atomInfo
     
     @staticmethod
-    def _interpret_atom_style(atom_style=None, fields=None, formats=None):
-        """interpret atom_style to fields
+    def parse_bonds(lines:List[str]):
 
-        Args:
-            atom_style (str|list|tuple): LAMMPS' atom styles
+        return np.array(lines, dtype=[('id', int), ('type', int), ('itom', int), ('jtom', int)])
+    
+    @staticmethod
+    def parse_angles(lines:List[str]):
+        
+        return np.array(lines, dtype=[('id', int), ('type', int), ('itom', int), ('jtom', int), ('ktom', int)])
 
-        Returns:
-            fields: fields in atom section
-        """
-        formats = {'id': int, 'mol': int, 'type': int, 'q': float, 'x': float, 'y': float, 'z': float}    
-        atom_styles = {'full': ['id', 'mol', 'type', 'q', 'x', 'y', 'z'], 'molecular': ['id', 'mol', 'type', 'x', 'y', 'z']}
-        if isinstance(atom_style, str):
-            fields = atom_styles[atom_style]
-            formats = [formats[field] if field in formats else float for field in fields]
+    @staticmethod
+    def parse_dihedrals(lines:List[str]):
         
-        elif fields:
-            formats = [formats[field] if field in formats else float for field in fields]
+        return np.array(lines, dtype=[('id', int), ('type', int), ('itom', int), ('jtom', int), ('ktom', int), ('ltom', int)])
+    
+class DataWriter:
+    
+    def __init__(self, fpath:str, atom_style='full'):
         
+        self.filepath = fpath
+        self.filehander = FileHandler(fpath, 'w')
+        self.atom_style = atom_style
+        
+    def write(self, system, isBonds=True, isAngles=True, isDihedrals=True):
+        
+        write = self.filehander.writeline
+        
+        #--- write comment ---
+        write('# '+system.comment)
+        write('\n\n')
+        
+        #--- write profile ---
+        write(f'    {system.natoms} atoms\n')
+        write(f'    {system.nbonds} bonds\n')
+        # write(f'    {system.nangles} angles\n')
+        # write(f'    {system.ndihedrals} dihedrals\n')
+        # write(f'    {system.nimpropers} impropers\n')
+        write(f'    {system.natomTypes} atom types\n')
+        write(f'    {system.nbondTypes} bond types\n')
+        # write(f'    {system.nangleTypes} angle types\n')
+        # write(f'    {system.ndihedralTypes} dihedral types\n')
+        # write(f'    {system.nimproperTypes} improper types\n')
+        write('\n')
+        
+        #--- write box ---
+        write(f'    {system.box.xlo} {system.box.xhi} xlo xhi\n')
+        write(f'    {system.box.ylo} {system.box.yhi} ylo yhi\n')
+        write(f'    {system.box.zlo} {system.box.zhi} zlo zhi\n')
+        write('\n')
+        
+        #--- write masses section ---
+        write('Masses\n\n')
+        id = np.arange(system.natomTypes) + 1
+        for i, at in enumerate(system.atomTypes):
+            write(f'    {id[i]}    {at.mass}  # {at.name}\n')
+        write('\n')
+        
+        #--- write atoms section ---
+        write('Atoms\n\n')
+        if 'id' not in system.atomManager.atoms:
+            id = np.arange(system.natoms) + 1
         else:
-            raise ValueError    
+            id = system.atomManager.atoms._fields['id']
         
-        return fields, formats
-
-class DataReader(ReaderBase, LAMMPSIO):
+        type_map = {}
+            
+        for i, at in enumerate(system.atoms):
+            if not isinstance(at.type, int):
+                type = type_map.get(at.type, len(type_map)) + 1
+            write(f'    {id[i]}    {at.mol}    {type}    {at.q}    {at.x:.4f}    {at.y:.4f}    {at.z:.4f}\n')
+        write('\n')
+        
+        #--- write bonds section ---
+        if isBonds:
+            id = np.arange(system.nbonds) + 1
+            write('Bonds\n\n')
+            for i, b in enumerate(system.bonds):
+                write(f'    {id[i]}    {b.type}    {b[0].id}    {b[1].id}\n')
+            write('\n')
+        
+        #--- write angle section ---
+        if isAngles:
+            write('Angles\n\n')
+            for a in system.angles:
+                write(f'    {a.id}    {a.type}    {a[0]}    {a[1]}    {a[2]}\n')
+            write('\n')
+            
+        #--- write dihedral section ---
+        if isDihedrals:
+            write('Dihedrals\n\n')
+            for d in system.dihedrals:
+                write(f'    {a.id}    {d.type}    {d[0]}    {d[1]}    {d[2]}    {d[3]}\n')
+            write('\n')
+        
+        self.filehander.close()    
     
-    format = ['data']
-
-    def iterdata(self):
-        with open(self.filename) as f:
-            for line in f:
-                line = line.partition('#')[0].strip()
-                if line:
-                    yield line
-
-    def pre_parse(self):
-        """Split a data file into dict of header and sections
-
-        Returns:
-            header: {property: value}
-            sections: {section: dataliens}
-        """
-        
-        f = list(self.iterdata())
-
-        # line number of section start
-        section_startline_no = [i for i, line in enumerate(f)
-                  if line.split()[0] in SECTIONS]
-        section_startline_no += [None]
-        
-        header = {}
-        for line in f[:section_startline_no[0]]:
-            for token in HEADERS:
-                if line.endswith(token):
-                    header[token] = line.split(token)[0]
-                    continue
-
-        sections = {f[l]:f[l+1:section_startline_no[i+1]]
-                 for i, l in enumerate(section_startline_no[:-1])}
-        
-        return header, sections
- 
-    def parse(self, fields=None, formats=None):
-        """Parses a LAMMPS_ DATA file.
-        """
-        # Can pass atom_style to help parsing
-        if 'atom_style' in self.kwargs:
-            fields, formats = self._interpret_atom_style(self.kwargs['atom_style'])
-
-        header, sections = self.pre_parse()
-        
-        if 'Masses' in sections:
-            self.masses = self._parse_masses(sections['Masses'])
-        
-        if 'Atoms' in sections:
-            self.atoms = self._parse_atoms(sections['Atoms'], fields, formats)
-        else:
-            raise KeyError("Data file was missing Atoms section")
-        
-        if 'Bonds' in sections:
-            self.bonds, self.bondTypes = self._parse_bonds(sections['Bonds'])
-            
-    def _parse_vel(self, datalines, order):
-        """Strip velocity info into np array
-        Parameters
-        ----------
-        datalines : list
-          list of strings from file
-        order : np.array
-          array which rearranges the velocities into correct order
-          (from argsort on atom ids)
-        Returns
-        -------
-        velocities : np.ndarray
-        """
-        vel = np.zeros((len(datalines), 3), dtype=np.float32)
-
-        for i, line in enumerate(datalines):
-            line = line.split()
-            vel[i] = line[1:4]
-
-        vel = vel[order]
-
-        return vel
-
-    def _parse_bonds(self, datalines):
-
-        m = map(lambda x: x.split(), datalines)
-        bondArr = np.array(list(m), int)
-        return bondArr[:, [2, 3]].tolist(), bondArr[:, [1]].tolist()
-
-    def _parse_atoms(self, datalines, fields, formats, massdict=None):
-
-        m = map(lambda x: tuple(x.split()), datalines)
-        atomArr = np.array(list(m), dtype={'names':fields, 'formats':formats})
-            
-        return atomArr
-
-    def _parse_masses(self, datalines):
-        """Lammps defines mass on a per atom type basis.
-        This reads mass for each type and stores in dict
-        """
-        
-        masses = {}
-        for line in datalines:
-            line = line.split()
-            masses[line[0]] = float(line[1])
-
-        return masses
-
-    def _parse_box(self, header):
-        x1, x2 = np.float32(header['xlo xhi'].split())
-        x = x2 - x1
-        y1, y2 = np.float32(header['ylo yhi'].split())
-        y = y2 - y1
-        z1, z2 = np.float32(header['zlo zhi'].split())
-        z = z2 - z1
-
-        if 'xy xz yz' in header:
-            # Triclinic
-            unitcell = np.zeros((3, 3), dtype=np.float32)
-            xy, xz, yz = np.float32(header['xy xz yz'].split())
-            unitcell[0][0] = x
-            unitcell[1][0] = xy
-            unitcell[1][1] = y
-            unitcell[2][0] = xz
-            unitcell[2][1] = yz
-            unitcell[2][2] = z
-            return unitcell
-        else:
-            # Orthogonal
-            unitcell = np.zeros(6, dtype=np.float32)
-            unitcell[:3] = x, y, z
-            unitcell[3:] = 90., 90., 90.
-
-            return unitcell
-  
-class DataWriter(WriterBase, LAMMPSIO):
-    
-    def __init__(self, filename, **kwargs):
-        super().__init__(filename, **kwargs)  
-        
-    def write(self, system, comment=None, **kwargs):
-        """Writes a LAMMPS_ DATA file.
-        """
-        atoms = system.atoms
-        box = system.box
-        forcefield = system.forcefield
-        if comment is None:
-            comment = '# Written by molpy'
-        
-        with open(self.filename, 'w') as f:
-            
-            self._write_header(f, atoms, box, comment)
-            self._write_masses(f, forcefield)
-            self._write_atoms(f, atoms)
-            self._write_bonds(f, atoms)
-            # self._write_velocities(f)
-            self._write_angles(f, atoms)
-            self._write_dihedrals(f, atoms)
-        
-    def _write_header(self, f, atoms, box, comment):
-        
-        f.write(comment)
-        f.write('\n')
-        f.write(f'\t{atoms.natoms} atoms\n')
-        f.write(f'\t{atoms.nbonds} bonds\n')
-        f.write(f'\t{atoms.nangles} angles\n')
-        f.write(f'\t{atoms.ndihedrals} dihedrals\n\n')
-        
-        f.write(f'\t{atoms.ntypes} atom types\n')
-        f.write(f'\t{atoms.nbondTypes} bond types\n')
-        f.write(f'\t{atoms.nangleTypes} angle types\n')
-        f.write(f'\t{atoms.ndihedralTypes} dihedral types\n\n')
-        
-        f.write(f'\t{box.xlo}  {box.xhi}  xlo xhi\n')     
-        f.write(f'\t{box.ylo}  {box.yhi}  ylo yhi\n')
-        f.write(f'\t{box.zlo}  {box.zhi}  zlo zhi\n\n')
-        
-    def _write_mass(self, f, forcefield):
-        
-        f.write(f'Masses\n\n')
-        for atomType in forcefield.atomTypes.values():
-            f.write(f'\t{atomType.typeID}\t{atomType.mass}  # {atomType.name}\n')
-            
-    def _write_atoms(self, f, atoms):
-        
-        f.write('Atoms\n\n')
-        for atom in atoms:
-            f.write(f'\t{atom.id}\t{atom.typeID}\t{atom.x}\t{atom.y}\t{atom.z}\n')
-            
-    def _write_bonds(self, f, atoms):
-        
-        f.write('Bonds\n\n')
-        for bond in atoms.bonds:
-            f.write(f'\t{bond[0]}\t{bond[1]}\t{bond[2]}\n')
-            
-            
-    
-        
-class DumpReader(ReaderTrajBase, LAMMPSIO):
-    
-    format = ['dump']
-    
-    def pre_parse(self):
-        isHeader = True
-        frameMetaInfo = self.frameMetaInfo
-        with open(self.filename) as f:
-
-            line = f.readline()
-            lino = 1
-            while line:
-                if line.startswith('ITEM: TIMESTEP'):
-                    frameMetaInfo.start_lino.append(lino)
-                    frameMetaInfo.start_byte.append(f.tell()-len(line))
-                    line = f.readline()
-                    frameMetaInfo.timesteps.append(int(line))
-                    line = f.readline()  # ITEM: NUMBER OF ATOMS
-                    frameMetaInfo.natoms.append(int(f.readline()))
-                    line = f.readline()  # ITEM: BOX
-                    frameMetaInfo.box.append((f.readline().split()+f.readline().split()+f.readline().split()))
-                    line = f.readline()
-                    if isHeader:
-                        isHeader = False
-                        frameMetaInfo.header = line.split()[2:]
-                    lino += 8
-                    
-                line = f.readline()
-                lino += 1
-            frameMetaInfo.start_byte.append(f.tell())
-        self.frameMetaInfo = frameMetaInfo
-        
-    def parse(self, frame):
-        if not isinstance(frame, int):
-            raise TypeError
-        if frame > len(self.frameMetaInfo.start_byte):
-            raise ValueError(f'frame length is {len(self.frameMetaInfo.start_byte)}')
-        self.index = frame
-        
-        start_byte = self.frameMetaInfo.start_byte[frame]
-        end_btyte = self.frameMetaInfo.start_byte[frame+1]
-        size = end_btyte - start_byte
-        header = self.frameMetaInfo.header
-        fields, formats = LAMMPSIO._interpret_atom_style(fields=header)
-        with open(self.filename) as f:
-            f.seek(start_byte)
-            datalines = f.read(size-1)
-            datalines = datalines.split('\n')
-            
-            atomArr = self._parse_atoms(datalines[9:], fields, formats)
-        return atomArr
-            
-    def _parse_atoms(self, datalines, fields, formats):
-        
-        m = map(lambda x: tuple(x.split()), datalines)
-        lm = list(m)
-        atomArr = np.array(lm, dtype={'names':fields, 'formats':formats})     
-        return atomArr
-    
-    def getFrames(self, frames):
-        for i in frames:
-            yield self.parse(i)
- 

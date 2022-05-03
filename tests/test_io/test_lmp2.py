@@ -5,7 +5,7 @@
 
 import pytest
 from molpy.atoms import Atoms
-from molpy.io.lmp2 import DumpReader, DataReader, DataWriter
+from molpy.io.lmp import DumpReader, DataReader, DataWriter
 from molpy.modeller.randomWalk import RandomWalkOnFcc
 from molpy.system import System
 import numpy.testing as npt
