@@ -119,7 +119,7 @@ class Atoms(Graph):
         return self.topo.ndihedrals
 
     def getDihedralIdx(self) -> List[List]:
-        return self.topo.dihedrals
+        return self.topo.dihedrals        
 
 class AtomVec:
     

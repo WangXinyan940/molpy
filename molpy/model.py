@@ -3,9 +3,7 @@
 # date: 2022-01-07
 # version: 0.0.2
 
-import numpy as np
 from .topo import Topo
-import jax.numpy as jnp
 
 class Graph:
     

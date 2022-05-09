@@ -9,4 +9,7 @@ from . import (
 from .box import Box
 from .system import System
 from .neighborlist import NeighborList
-from .analysis import AnalysisTaskManagement, Analyzer
+
+VERSION = '0.0.1'
+AUTHOR = 'Roy Kid'
+AUTHOR_EMAIL = 'lijichen365@126.com'

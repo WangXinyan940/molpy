@@ -23,6 +23,11 @@ class System:
         self.comment = comment
     
     @property
+    def boxVec(self):
+        box = self._box
+        return [box.Lx, box.Ly, box.Lz, box.xy, box.xz, box.yz]
+    
+    @property
     def forcefield(self):
         return self._forcefield
 
@@ -142,6 +147,7 @@ class System:
 
         self._traj = DumpReader(dumpFile)
         self.nFrames = self._traj.nFrames
+        self.selectFrame(0)
         return self._traj
 
     def selectFrame(self, nFrame):
@@ -164,11 +170,14 @@ class System:
     def setBox(self, lx, ly, lz, xy=0, xz=0, yz=0):
         self._box = Box(lx, ly, lz, xy, xz, yz)
 
-    def sample(self, start, stop, interval):
+    def sample(self, start=0, stop=-1, interval=1):
+        
+        if stop == -1:
+            stop = self.nFrames
         
         assert self._traj, AttributeError('Trajectory not loaded')
-        assert stop < self.nFrames, ValueError('Stop frame is larger than the number of frames')
-        assert start > 0, ValueError('Start frame is larger than the number of frames')
+        assert stop <= self.nFrames, ValueError('Stop frame is less than the number of frames')
+        assert start >= 0, ValueError('Start frame is larger than the number of frames')
         assert isinstance(interval, int), TypeError('Interval must be an integer')
         
         for nFrame in range(start, stop, interval):
