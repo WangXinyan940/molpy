@@ -31,8 +31,7 @@ class AtomTypes(dict):
         return list(self.values()).__iter__()
     
     def defAtomType(self, atomType):
-        self[atomType.name] = atomType
-    
+        self[atomType.name] = atomType    
         
 class BondTypes:
     

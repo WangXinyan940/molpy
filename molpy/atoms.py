@@ -3,17 +3,13 @@
 # date: 2022-01-08
 # version: 0.0.2
 
-from logging import warning
-from typing import List, Literal, Optional
 from molpy.bond import Bond
 from molpy.angle import Angle
 from molpy.dihedral import Dihedral
-from molpy.neighborlist import NeighborList
-from molpy.utils import fromStructToDict
-from .topo import Topo
 from .model import Graph
 from .atom import Atom
 import numpy as np
+from typing import List
 
 
 class Atoms(Graph):

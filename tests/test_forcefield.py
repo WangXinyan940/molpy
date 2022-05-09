@@ -84,12 +84,7 @@ class TestForceField:
         assert ff.atomTypes['380'].properties['class_'] == 'OW'
         
     def test_defBondType(self, ff):
-        ff.defBondType('HarmonicBondForce', class1='OW', class2='HW', properties={'r0':1.5})
+        ff.defBondType('HarmonicBondForce', class1='OW', class2='HW', r0=1.5)
         assert ff.nAtomTypes == 2
         assert ff.bondTypes['OW', 'HW'].properties['r0'] == 1.5
         assert ff.bondTypes['380', '381'].properties['r0'] == 1.5
-        
-    def test_fromXML(self, ff):
-        
-        ff.fromXML('tests/data/forcefield.xml')
-        assert ff.atomTypes['380'].properties['mass'] == '15.999'
