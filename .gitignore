@@ -4,17 +4,6 @@
 ### molpy ### 
 
 # Temporary files
-*.test
-*.data
-*.dump
-*.zip
-gen*
-paper/
-mpidwater.xml
-cpp/*
-*.txt
-*.in
-*.lammps
 
 # test data
 samples/
