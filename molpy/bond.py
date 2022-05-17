@@ -4,7 +4,7 @@
 # version: 0.0.2
 
 import numpy as np
-from molpy.interaction import register
+from .interaction import register
 
 class Bond:
     

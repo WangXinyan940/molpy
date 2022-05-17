@@ -1,46 +1,99 @@
+// #ifndef ARRAY_H
+// #define ARRAY_H
+
+// #include <vector>
+
+// // template<typename T>
+// // class Array {
+
+// //     public:
+
+// //         int nrows, ncols;
+
+// //         void append(T value) {
+// //             for (int i = 0; i < this->shape[1]; i++) {
+// //                 this->data.emplace_back(value);
+// //             }
+// //         };
+
+// //         void append(std::initializer_list<T> value) {
+// //             for (auto i: value)
+// //                 this->data.emplace_back(i);
+// //         };
+
+// //         ssize_t size() {
+// //             return this->data.size();
+// //         };
+
+// //         std::vector<T> operator[](int index) {
+// //             std::vector<T> tmp;
+// //             for (int i = 0; i < this->shape[1]; i++) {
+// //                 tmp.emplace_back(this->data[index*this->shape[1]+i]);
+// //             }
+// //             return tmp;
+// //         };
+
+// //         void replace(int index, std::initializer_list<T> value) {
+// //             int i = 0;
+// //             for (auto elem : value) {
+// //                 this->data[index*this->shape[1]+i] = elem;
+// //                 i++;
+// //             }
+// //         }
+
+// //         std::vector<int> shape;
+
+// //         T* getData() {
+// //             return this->data.data();
+// //         }
+
+// //     private:
+// //         int nrows, ncols;
+// //         std::vector<T> data;
+
+// // };
+
+
+
+// #endif ARRAY_H // ARRAY_H
+
 #ifndef ARRAY_H
 #define ARRAY_H
 
 #include <vector>
-#include <stdexcept>
+#include <ostream>
 
 template<typename T>
-class Array2 {
+class Array {
 
     public:
 
-        Array2(int ncols) : m_ncols(ncols) { }
-        Array2(int nrows, int ncols) : m_ncols(ncols) {
-            m_data = std::vector<T>(nrows * ncols, 0);
-            m_data.resize(nrows * ncols);
-        }
-        void append (const std::vector<T>& row) {
-            if (row.size() != m_ncols) {
-                throw std::runtime_error("Row size does not match ncols");
-            }
-            for (auto& elem : row) {
-                m_data.push_back(elem);
-            }            
-        }
-        int get_nrows() {
-            return m_data.size() / m_ncols;
-        }
-        int get_ncols() {
-            return m_ncols;
+        std::vector<T> data;
+        std::vector<int> shape;
+        std::vector<int> strides;
+        int ndim;
+
+        void append(T value) {
+            this->data.emplace_back(value);
         }
 
-        std::vector<T>* data(){
-            return &m_data;
+        void append(std::initializer_list<T> value) {
+            for (auto i: value)
+                this->data.emplace_back(i);
         }
 
-    private:
+        T* ptr() {
+            return this->data.data();
+        }
 
-        int m_ncols, m_nrows;
-        std::vector<T> m_data;
+        void clear() {
+            this->data.clear();
+        }
+
+        T dtype() {
+            return data.value_type;
+        }
 
 };
-
-
-
 
 #endif // ARRAY_H

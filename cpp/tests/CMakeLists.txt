@@ -15,19 +15,17 @@ enable_testing()
 
 set(SRC_DIR ../src)
 set(INCLUDE_DIR ../include)
-include_directories(molpy_cpp_test PRIVATE ../include)
+include_directories(molpy_cpp_test PRIVATE ${INCLUDE_DIR})
 
 # test pybind
 find_package(pybind11)
 pybind11_add_module(vec ../src/vec_bind.cpp)
-pybind11_add_module(arrayTest ../src/array_bind.cpp)
 
-# test cpp
-set(SOURCES test_vec.cpp test_array.cpp test_main.cpp)
 
 add_executable(
   molpy_cpp_test
-  ${SOURCES}
+  test_array.cpp
+  test_vec.cpp
 )
 
 target_link_libraries(

@@ -9,17 +9,18 @@ from pathlib import Path
 from typing import Iterable
 import warnings
 from molpy.system import System
-import numpy as np
 import pandas as pd
+from typing import List
 
 class Batcher:
     
-    def __init__(self, root_dir, cases_name, batch_ids, system=None):
+    def __init__(self, root_dir: str, cases_name: List[str], batch_ids: List[str], system=None, name=None):
         
         self.root_dir = root_dir
         self.cases_name = cases_name
         self.batch_ids = batch_ids
-        self.system = System() if system is None else system
+        self.name = name if name is not None else f'at {root_dir}'
+        self.system = System(self.name) if system is None else system
         
     def __iter__(self):
         
@@ -39,6 +40,9 @@ class Batcher:
                 
                 else:
                     warnings.warn(f'{case_name}/{batch_id} not found')
+                    
+    def __repr__(self):
+        return f'<Batcher: {self.name}>'
                     
 
 class Storage:
@@ -64,5 +68,7 @@ class Storage:
         df = [pd.Series(v, name=k) for k, v in self.data.items()]
         return pd.concat(df, axis=1)
     
-    def to_csv(self, path):
+    def to_csv(self, path=None):
+        if path is None:
+            path = self.name
         self.toDataFrame().to_csv(path)

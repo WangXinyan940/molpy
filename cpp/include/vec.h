@@ -53,6 +53,10 @@ class Vec3 {
         Real x {0}; //!< x-component of the vector
         Real y {0}; //!< y-component of the vector
         Real z {0}; //!< z-component of the vector
+
+        Real operator[](int i) const {
+            return (&x)[i];
+        }
 };
 
 //! Addition of two Vec3s
