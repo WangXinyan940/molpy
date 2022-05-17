@@ -1,5 +1,5 @@
-#ifndef NON_SELF_AVOIDING_RW_H
-#define NON_SELF_AVOIDING_RW_H
+#ifndef SIMPLERW_H
+#define SIMPLERW_H
 
 #include <random>
 #include <iostream>

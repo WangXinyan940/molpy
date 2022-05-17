@@ -9,7 +9,7 @@ set(SRC_DIR src)
 set(INCLUDE_DIR include)
 include_directories(${INCLUDE_DIR})
 
-add_library(randomWalk STATIC ${SRC_DIR}/nonSelfAvoidingRW.cpp)
+add_library(randomWalk STATIC ${SRC_DIR}/simpleRW.cpp)
 
 find_package(pybind11)
 pybind11_add_module(
