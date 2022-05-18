@@ -4,6 +4,61 @@
 #include <pybind11/numpy.h>
 namespace py = pybind11;
 
+namespace pybind11 { namespace detail {
+    template <typename T> struct type_caster<Vec3<T>> {
+    public:
+        /**
+         * This macro establishes the name 'Vec3' in
+         * function signatures and declares a local variable
+         * 'value' of type Vec3
+         */
+        PYBIND11_TYPE_CASTER(Vec3<T>, _("Vec3<T>"));
+
+        /**
+         * Conversion part 1 (Python->C++): convert a PyObject into a Vec3
+         * instance or return false upon failure. The second argument
+         * indicates whether implicit conversions should be applied.
+         */
+        bool load(handle src, bool convert) {
+
+            if (!convert && !py::array_t<T>::check_(src))
+                return false;
+
+            auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
+            if (!buf)
+                return false;
+
+            auto ndim = buf.ndim();
+            if (ndim != 1)
+                return false;
+            
+            std::vector<size_t> shape(buf.ndim());
+
+            for (int i=0; i<buf.ndim(); i++)
+                shape[i] = buf.shape()[i];
+
+            value = Vec3<T>();
+            value.x = buf.data()[0];
+            value.y = buf.data()[1];
+            value.z = buf.data()[2];
+
+            return true;
+        }
+
+        /**
+         * Conversion part 2 (C++ -> Python): convert a Vec3 instance into
+         * a Python object. The second and third arguments are used to
+         * indicate the return value policy and parent object (for
+         * ``return_value_policy::reference_internal``) and are generally
+         * ignored by implicit casters.
+         */
+        static py::handle cast(const Vec3<T>& src, py::return_value_policy policy /* policy */, py::handle parent /* parent */) {
+            // return src.to_numpy().release();
+            return py::array(3, &src.x).release();
+        }
+    };
+}} // Vec3
+
 template<typename T>
 void bind_vec3(py::module &m, std::string&& typestr) {
     using Vec3 = Vec3<T>;
@@ -37,7 +92,7 @@ PYBIND11_MODULE(molpy_cpp, m) {
 
     py::class_<SimpleRW>(m_randomWalk, "SimpleRW", py::buffer_protocol())
         .def(py::init<>())
-        .def("walk", &SimpleRW::walk, "walk func")
+        .def("walk", &SimpleRW::walk, "walk func", py::arg("lchain"), py::arg("nchain"))
         .def("reset", &SimpleRW::reset, "reset")
         .def("getPositions", 
             [](SimpleRW &m) -> py::array { 
@@ -62,13 +117,22 @@ PYBIND11_MODULE(molpy_cpp, m) {
                     links.shape,
                     links.strides
                 )); 
-            }, "get links");
+            }, "get links")
+        .def("walkOnce", &SimpleRW::walkOnce, 
+             "walk once from random start", 
+             py::arg("lchain"))
+        .def("walkOnceFrom", &SimpleRW::walkOnceFrom, 
+             "walk once from specific start", 
+             py::arg("start"), py::arg("lchain"))
+        .def("findStart", &SimpleRW::findStart, 
+            "find a random walk start"
+            );
 
 
     // Math
     py::module m_math = m.def_submodule("math");
-        m.doc() = "math";
-        bind_vec3<int>(m, "i");
-        bind_vec3<float>(m, "f");
+        m_math.doc() = "math";
+        bind_vec3<int>(m_math, "i");
+        bind_vec3<float>(m_math, "f");
 
 }

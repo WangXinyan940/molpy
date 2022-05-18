@@ -20,4 +20,18 @@ class SimpleRW:
         
         return self._workload.getLinks()
     
+    def walkOnce(self, lchain):
+        
+        return self._workload.walkOnce(lchain)
     
+    def walkOnceFrom(self, start, lchain):
+        
+        return self._workload.walkOnceFrom(start, lchain)
+    
+    def findStart(self):
+        
+        return self._workload.findStart()
+    
+    def reset(self):
+        
+        return self._workload.reset()

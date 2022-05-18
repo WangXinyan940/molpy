@@ -16,4 +16,10 @@ class TestSimpleRandomWalk:
         assert len(positions) == 6
         
     
+    def test_walkOnce(self):
+        
+        rw = SimpleRW()
+        rw.walkOnce(start=[1,2,3], lchain=3)
+        rw.walkOnce(np.array([1,2,3]), 3)
+    
     

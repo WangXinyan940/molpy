@@ -8,6 +8,7 @@ from .system import System
 from .neighborlist import NeighborList
 from .batch import Batcher, Storage
 from .io import *
+from .atoms import Atoms
 
 NAME = 'molpy'
 VERSION = '0.0.1'

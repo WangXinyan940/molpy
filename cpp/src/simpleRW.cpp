@@ -1,5 +1,6 @@
 
 #include "simpleRW.h"
+#include <iostream>
 
 SimpleRW::SimpleRW() {
 
@@ -40,6 +41,11 @@ void SimpleRW::walk(int lchain, int nchain) {
 Vec SimpleRW::walkOnce(int lchain) {
 
     Vec next = findStart();
+    return walkOnceFrom(next, lchain);
+
+}
+
+Vec SimpleRW::walkOnceFrom(Vec next, int lchain) {
 
     for (int i = 0; i < lchain; i++) {
 
@@ -52,7 +58,8 @@ Vec SimpleRW::walkOnce(int lchain) {
         next = walkOneStep(next);
     }
 
-    return next;
+    return next;    
+
 }
 
 Vec SimpleRW::walkOneStep(Vec now) {
@@ -82,4 +89,3 @@ Links SimpleRW::getLinks() {
 
     return links;
 }
-

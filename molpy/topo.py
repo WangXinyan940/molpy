@@ -46,6 +46,8 @@ class Topo:
                 adjDict, adjList, adjMatrix = self.__class__.validAdjDict(connection)
             elif isinstance(connection, (list, tuple)):
                 adjDict, adjList, adjMatrix = self.__class__.validAdjList(connection)
+            elif isinstance(connection, np.ndarray):
+                adjDict, adjList, adjMatrix = self.__class__.validAdjList(connection)
             else:
                 raise TypeError
             self._adjDict = adjDict
