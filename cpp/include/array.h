@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <ostream>
+#include <functional>
 
 template<typename T>
 class Array {
@@ -12,27 +13,34 @@ class Array {
         std::vector<T> data;
         std::vector<int> shape;
         std::vector<int> strides;
-        int ndim;
 
         void append(T value) {
-            this->data.emplace_back(value);
+            data.emplace_back(value);
         }
 
         void append(std::initializer_list<T> value) {
             for (auto i: value)
-                this->data.emplace_back(i);
-        }
-
-        T* ptr() {
-            return this->data.data();
+                append(i);
         }
 
         void clear() {
-            this->data.clear();
+            data.clear();
         }
 
-        T dtype() {
+        const T* getPtr() const {
+            return data.data();
+        }
+
+        T dtype() const {
             return data.value_type;
+        }
+
+        int getSize() const {
+            return data.size();
+        }
+
+        int getNdim() const {
+            return shape.size();
         }
 
 };

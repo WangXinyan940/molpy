@@ -10,7 +10,6 @@
 
 namespace py = pybind11;
 using Positions = Array<double>;
-using Links = Array<int>;
 using Vec = Vec3<double>;
 
 class SimpleRW {
@@ -22,10 +21,9 @@ class SimpleRW {
         void walk(int lchain, int nchain);
         void reset();
         Positions getPositions();
-        Links getLinks();
         Vec findStart();
-        Vec walkOnce(int lchain);
-        Vec walkOnceFrom(Vec start, int lchain);
+        Positions walkOnce(int lchain);
+        Positions walkOnceFrom(Vec start, int lchain);
 
     private:
         double bondLength;
@@ -36,7 +34,7 @@ class SimpleRW {
         Vec walkOneStep(Vec now);
         int nsteps, nlinks;
         Positions positions;
-        Links links;
+
 };
 
 #endif

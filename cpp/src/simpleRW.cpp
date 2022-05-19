@@ -38,27 +38,31 @@ void SimpleRW::walk(int lchain, int nchain) {
     }
 }
 
-Vec SimpleRW::walkOnce(int lchain) {
+Positions SimpleRW::walkOnce(int lchain) {
 
     Vec next = findStart();
     return walkOnceFrom(next, lchain);
 
 }
 
-Vec SimpleRW::walkOnceFrom(Vec next, int lchain) {
+Positions SimpleRW::walkOnceFrom(Vec next, int lchain) {
+
+    Positions thisWalkPositions = Positions();
 
     for (int i = 0; i < lchain; i++) {
 
         positions.append({next.x, next.y, next.z});
+        thisWalkPositions.append({next.x, next.y, next.z});
         if (i != 0) {
-            links.append({nsteps-1, nsteps});
             nlinks++;
         }
         nsteps++;
         next = walkOneStep(next);
     }
 
-    return next;    
+    thisWalkPositions.shape = {lchain, 3};
+
+    return thisWalkPositions;    
 
 }
 
@@ -75,17 +79,6 @@ Vec SimpleRW::walkOneStep(Vec now) {
 Positions SimpleRW::getPositions() {
 
     positions.shape = {nsteps, 3};
-    positions.strides = {sizeof(positions.dtype())*3, sizeof(positions.dtype())};
-    positions.ndim = 2;
 
     return positions;
-}
-
-Links SimpleRW::getLinks() {
-
-    links.shape = {nlinks, 2};
-    links.strides = {sizeof(links.dtype())*2, sizeof(links.dtype())};
-    links.ndim = 2;
-
-    return links;
 }

@@ -20,6 +20,16 @@ class SimpleRW:
         
         return self._workload.getLinks()
     
+    @property
+    def lastPositions(self):
+        
+        return self._workload.getLastWalk()
+    
+    @property
+    def lastLinks(self):
+        
+        return self._workload.getLastLinks()
+    
     def walkOnce(self, lchain):
         
         return self._workload.walkOnce(lchain)
