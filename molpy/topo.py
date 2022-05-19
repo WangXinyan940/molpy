@@ -39,6 +39,8 @@ class Topo:
         self._hasAtom = False
         
         self._bondTypes = None
+        self._angleTypes = None
+        self._dihedralsTypes = None
         
     def setTopo(self, connection):
         if connection is not None:

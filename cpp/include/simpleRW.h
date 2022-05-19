@@ -15,25 +15,21 @@ using Vec = Vec3<double>;
 class SimpleRW {
 
     public:
-        SimpleRW();
-            
+        SimpleRW(double box_lo, double box_hi);
         ~SimpleRW();
-        void walk(int lchain, int nchain);
         void reset();
         Positions getPositions();
         Vec findStart();
-        Positions walkOnce(int lchain);
-        Positions walkOnceFrom(Vec start, int lchain);
+        Positions walkOnce(int lchain, double stepsize);
+        Positions walkOnceFrom(Vec start, int lchain, double stepsize);
 
     private:
-        double bondLength;
+
         std::default_random_engine generator;
         std::uniform_real_distribution<double> theta_gen;
         std::uniform_real_distribution<double> phi_gen;
         std::uniform_real_distribution<double> pos_gen;
-        Vec walkOneStep(Vec now);
-        int nsteps, nlinks;
-        Positions positions;
+        Vec walkOneStep(Vec now, double stepsize);
 
 };
 

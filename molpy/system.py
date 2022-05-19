@@ -184,3 +184,7 @@ class System:
             self.selectFrame(nFrame)
             yield self
 
+    def save(self, path, format):
+        
+        pass
+        

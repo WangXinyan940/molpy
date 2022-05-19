@@ -22,7 +22,6 @@ ext_modules = [
     )  # delete build folder before rebuild
 ]
 
-
 setup(
     **meta_data,
     ext_modules=ext_modules,

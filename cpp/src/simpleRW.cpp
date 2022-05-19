@@ -2,24 +2,14 @@
 #include "simpleRW.h"
 #include <iostream>
 
-SimpleRW::SimpleRW() {
+SimpleRW::SimpleRW(double box_lo, double box_hi) {
 
-    bondLength = 1.0;
-    double xlo = 0;
-    double xhi = 10;
     std::random_device rand_seed;
     generator = std::default_random_engine(rand_seed());
     theta_gen = std::uniform_real_distribution<double>(0.0, 2.0 * M_PI);  //azimuth
     phi_gen = std::uniform_real_distribution<double>(0.0, M_PI);  //zenith
-    pos_gen = std::uniform_real_distribution<double>(xlo, xhi);  //x,y,z
-    positions = Positions();
-    nsteps = 0;
-    nlinks = 0;
+    pos_gen = std::uniform_real_distribution<double>(box_lo, box_hi);  //x,y,z
 
-}
-
-void SimpleRW::reset() {
-    positions.clear();
 }
 
 SimpleRW::~SimpleRW() { }
@@ -32,32 +22,20 @@ Vec SimpleRW::findStart() {
     return start;
 }
 
-void SimpleRW::walk(int lchain, int nchain) {
-    for (int i = 0; i < nchain; i++) {
-        walkOnce(lchain);
-    }
-}
-
-Positions SimpleRW::walkOnce(int lchain) {
+Positions SimpleRW::walkOnce(int lchain, double stepsize) {
 
     Vec next = findStart();
-    return walkOnceFrom(next, lchain);
+    return walkOnceFrom(next, lchain, stepsize);
 
 }
 
-Positions SimpleRW::walkOnceFrom(Vec next, int lchain) {
+Positions SimpleRW::walkOnceFrom(Vec next, int lchain, double stepsize) {
 
     Positions thisWalkPositions = Positions();
 
     for (int i = 0; i < lchain; i++) {
-
-        positions.append({next.x, next.y, next.z});
         thisWalkPositions.append({next.x, next.y, next.z});
-        if (i != 0) {
-            nlinks++;
-        }
-        nsteps++;
-        next = walkOneStep(next);
+        next = walkOneStep(next, stepsize);
     }
 
     thisWalkPositions.shape = {lchain, 3};
@@ -66,19 +44,12 @@ Positions SimpleRW::walkOnceFrom(Vec next, int lchain) {
 
 }
 
-Vec SimpleRW::walkOneStep(Vec now) {
+Vec SimpleRW::walkOneStep(Vec now, double stepsize) {
 
     double theta = theta_gen(generator);
     double phi = phi_gen(generator);
 
-    Vec delta = {bondLength*sin(phi)*cos(theta), bondLength*sin(phi)*sin(theta), bondLength*cos(phi)};
+    Vec delta = {stepsize*sin(phi)*cos(theta), stepsize*sin(phi)*sin(theta), stepsize*cos(phi)};
     return now + delta;
 
-}
-
-Positions SimpleRW::getPositions() {
-
-    positions.shape = {nsteps, 3};
-
-    return positions;
 }

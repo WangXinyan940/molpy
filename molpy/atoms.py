@@ -57,7 +57,7 @@ class Atoms(Graph):
         atoms = np.array(self.atoms)
         itoms = atoms[bondIdx[:, 0]]
         jtoms = atoms[bondIdx[:, 1]]
-        bondTypes = self.topo._bondTypes
+        bondTypes = getattr(self.topo, '_bondTypes', [None]*len(bondIdx))
         bonds = []
         for i in range(len(bondIdx)):
             bonds.append(Bond(itoms[i], jtoms[i], bondTypes[i]))
@@ -72,7 +72,7 @@ class Atoms(Graph):
 
     def getAngles(self) -> List[Angle]:
         angleIdx = self.topo.angles
-        angleTypes = self.topo._angleTypes
+        angleTypes = getattr(self.topo, '_angleTypes', [None]*len(angleIdx))
         if angleIdx is None:
             return []
         atoms = np.array(self.atoms)
@@ -96,7 +96,7 @@ class Atoms(Graph):
     def getDihedrals(self) -> List[Dihedral]:
 
         dihedralIdx = self.topo.dihedrals
-        dihedralTypes = self.topo._dihedralTypes
+        dihedralTypes = getattr(self.topo, '_dihedralTypes', [None]*len(dihedralIdx))
         if dihedralIdx is None:
             return []
         atoms = np.array(self.atoms)
@@ -115,10 +115,19 @@ class Atoms(Graph):
         return self.topo.ndihedrals
 
     def getDihedralIdx(self) -> List[List]:
-        return self.topo.dihedrals        
+        return self.topo.dihedrals     
+    
+    def append(self, atoms):
+        pass
+            
+               
 
 class AtomVec:
     
     def __init__(self):
         
         self.atoms = Atoms()
+        
+    def append(self):
+        
+        self.atoms.append()

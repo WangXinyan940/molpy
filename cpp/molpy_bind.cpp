@@ -110,11 +110,11 @@ namespace pybind11 { namespace detail {
 
             py::array arr;
 
-            if (src.getNdim()) {  // shape is not set
+            if (!src.getNdim()) {  // shape is not set
             std::cout << "strides.size() == 0" << std::endl;
                 arr = py::array(src.getSize(), src.getPtr());
             }
-            else if (src.getNdim()) {  // shape is set
+            else {  // shape is set
             std::cout << "strides.size() != 0" << std::endl; 
                 arr = py::array(src.shape, src.getPtr());
             }
@@ -149,32 +149,28 @@ void bind_vec3(py::module &m, std::string&& typestr) {
 }
 
 
-PYBIND11_MODULE(molpy_cpp, m) {
-    m.doc() = "molpy workload in cpp";
+PYBIND11_MODULE(molpy_cpp, molpy_cpp) {
+    molpy_cpp.doc() = "molpy workload in cpp";
 
-    // RandomWalk
-    py::module m_randomWalk = m.def_submodule("randomWalk");
-
-    py::class_<SimpleRW>(m_randomWalk, "SimpleRW", py::buffer_protocol())
-        .def(py::init<>())
-        .def("walk", &SimpleRW::walk, "walk func", py::arg("lchain"), py::arg("nchain"))
-        .def("reset", &SimpleRW::reset, "reset")
-        .def("getPositions", &SimpleRW::getPositions, "get positions")
-        .def("walkOnce", &SimpleRW::walkOnce, 
-             "walk once from random start", 
-             py::arg("lchain"))
-        .def("walkOnceFrom", &SimpleRW::walkOnceFrom, 
-             "walk once from specific start", 
-             py::arg("start"), py::arg("lchain"))
-        .def("findStart", &SimpleRW::findStart, 
-            "find a random walk start"
-            );
-
-
-    // Math
-    py::module m_math = m.def_submodule("math");
-        m_math.doc() = "math";
+    // Math submodule
+    py::module m_math = molpy_cpp.def_submodule("math");
+        m_math.doc() = "math submodule";
         bind_vec3<int>(m_math, "i");
         bind_vec3<float>(m_math, "f");
+
+    // RandomWalk submodule
+    py::module m_randomWalk = molpy_cpp.def_submodule("randomWalk");
+        m_randomWalk.doc() = "randomWalk submodule";
+        py::class_<SimpleRW>(m_randomWalk, "SimpleRW")
+            .def(py::init<double, double>())
+            .def("walkOnce", &SimpleRW::walkOnce, 
+                "walk once from random start", 
+                py::arg("lchain"), py::arg("stepsize"))
+            .def("walkOnceFrom", &SimpleRW::walkOnceFrom, 
+                "walk once from specific start", 
+                py::arg("start"), py::arg("lchain"), py::arg("stepsize"))
+            .def("findStart", &SimpleRW::findStart, 
+                "find a random walk start"
+                );
 
 }

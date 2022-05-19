@@ -1,47 +1,41 @@
-from molpy_cpp.randomWalk import SimpleRW as SimpleRW_cpp
+# author: Roy Kid
+# contact: lijichen365@126.com
+# date: 2022-05-19
+# version: 0.0.1
 
-class SimpleRW:
+from molpy_cpp.randomWalk import SimpleRW as SimpleRW_cpp
+import numpy as np
+
+class randomWalk:
     
-    def __init__(self):
+    def getLinearTopo(self, nsteps, offset=0):
         
-        self._workload = SimpleRW_cpp()
-        
-    def walk(self, lchain, nchain):
-        
-        self._workload.walk(lchain, nchain)
-        
-    @property
-    def positions(self):
-        
-        return self._workload.getPositions()
+        bondi = np.arange(nsteps)
+        bondj = bondi + 1
+        bonds = np.vstack((bondi, bondj)).T
+        return bonds + offset
     
-    @property
-    def links(self):
+    def getGraftTopo(self, graft_idx, main_chain_length):
         
-        return self._workload.getLinks()
+        return np.vstack((graft_idx, np.arange(len(graft_idx))+main_chain_length)).T
+
+class SimpleRW(randomWalk):
     
-    @property
-    def lastPositions(self):
+    def __init__(self, box):
         
-        return self._workload.getLastWalk()
-    
-    @property
-    def lastLinks(self):
+        if isinstance(box, (int, float)):
+            _box = (0, box)
         
-        return self._workload.getLastLinks()
-    
-    def walkOnce(self, lchain):
+        self._workload = SimpleRW_cpp(*_box)
         
-        return self._workload.walkOnce(lchain)
-    
-    def walkOnceFrom(self, start, lchain):
+    def walkOnce(self, lchain, stepsize):
         
-        return self._workload.walkOnceFrom(start, lchain)
+        return self._workload.walkOnce(lchain, stepsize)
     
+    def walkOnceFrom(self, start, lchain, stepsize):
+        
+        return self._workload.walkOnceFrom(start, lchain, stepsize)
+            
     def findStart(self):
         
         return self._workload.findStart()
-    
-    def reset(self):
-        
-        return self._workload.reset()
