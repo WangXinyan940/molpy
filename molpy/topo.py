@@ -10,8 +10,33 @@ import numpy as np
 
 class Topo:
     
+    """ A class for topology in the graph. In the chemstry, this class represents bonds/angles/dihedrals etc. in a molecule. After providing the connection, it can reason topo info of a molecule.
+    """
+    
     def __init__(self, connection=None, special_bonds:Sequence=None):
+        """ Initialize a topology class with connection in graph, and reason topo info. The connection can be adjDict, adjList, adjMatrix, or None. The adjList is a list of lists, adjDict is a dict of list, and adjMatrix is a numpy array.
         
+        For example, we have a star type of graph, we can use the following connection format to create a topology:
+        
+        adjList:
+            [[0, 1], [0, 2], [0, 3], [0, 4]]
+        adjDict:
+            {0: [1, 2, 3, 4]}
+        adjMatrix:
+            [[0, 1, 1, 1, 1],
+             [1, 0, 0, 0, 0],
+             [1, 0, 0, 0, 0],
+             [1, 0, 0, 0, 0],
+             [1, 0, 0, 0, 0]]
+             
+        In the adjList and adjDict, the index of the atoms is the same as the index of the atoms in the graph/molecule, i.e. the first atom in the molecule is the 0th atom in the adjList and adjDict.
+        
+        If no special notation, the following docs and examples are used star type of graph as an example
+
+        Args:
+            connection (adjList/adjDict, optional): connection between nodes. Defaults to None, which means an empty topo class.
+            special_bonds (Sequence, optional): _description_. Defaults to None.
+        """
         self.reset()
         self.setTopo(connection)
         self.special_bonds = special_bonds
@@ -29,6 +54,8 @@ class Topo:
         pass
 
     def reset(self):
+        """reset the topo instance
+        """
         self._atoms = None
         self._bonds = None
         self._angles = None
@@ -43,6 +70,16 @@ class Topo:
         self._dihedralsTypes = None
         
     def setTopo(self, connection):
+        """convert connection to adjDict and adjList
+
+        Args:
+            connection (adjList/adjDict): input topo info
+
+        Raises:
+            TypeError: when input except connection format
+        """
+        # fall back to adjDict and adjList
+        #! adjMatrix is not supported yet
         if connection is not None:
             if isinstance(connection, dict):
                 adjDict, adjList, adjMatrix = self.__class__.validAdjDict(connection)
@@ -55,15 +92,50 @@ class Topo:
             self._adjDict = adjDict
             self._adjList = adjList
             self._adjMatrix = adjMatrix
+            
+    def getSubTopo(self, index):
+        """
+        Get sub topology among index. For example, there is a topology like {1:{0,2}}, and we want to get the sub topology of [0, 1], then we can use getSubTopo([0, 1])
+        
+        Args:
+            index (slice): vertices in the sub topology
+
+        Returns:
+            Topo: sub topo
+        """
+        adjDict = self._adjDict
+        subtopo = {}
+        for i, pairs in adjDict.items():
+            if j not in index:
+                continue
+            subtopo[i] = []
+            for j in pairs:
+                if j in index:
+                    subtopo[i].append(j)
+        return Topo(subtopo)
 
     @staticmethod
     def validAdjDict(conect):
-        
+        """ convert adjDict to adjList and adjMatrix
+
+        Args:
+            conect (adjDict): input adjDict
+
+        Returns:
+            (adjDict, adjList, adjMatrix)
+        """
         return conect, [[c, p] for c, ps in conect.items() for p in ps], None
     
     @staticmethod
     def validAdjList(conect):
+        """ convert adjList to adjDict and adjMatrix
 
+        Args:
+            conect (adjList): input adjList
+
+        Returns:
+            (adjDict, adjList, adjMatrix)            
+        """
         connection = defaultdict(list)
         for bond in conect:
             connection[bond[0]].append(bond[1])
@@ -71,7 +143,12 @@ class Topo:
         return dict(connection), conect, None
         
     def getBonds(self)->np.ndarray:
-        
+        """get bonds representation from topo. 
+           return np.array([[0, 1], [0, 2], [0, 3], [0, 4]])
+
+        Returns:
+            np.ndarray: bond info
+        """
         if self._hasBond:
             return self._bonds
         
@@ -90,6 +167,14 @@ class Topo:
         return self._bonds
     
     def setBondTypes(self, bondtypes):
+        """set bond types with identicial integers. The length of bondtypes should be equal to the number of bonds.
+
+        Args:
+            bondtypes (1-d List/np.ndarray): bond types
+
+        Raises:
+            ValueError: unknown format
+        """
         
         if self._bondTypes is None or len(bondtypes) == len(self._bonds):
         

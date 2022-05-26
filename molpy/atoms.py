@@ -10,20 +10,26 @@ from .model import Graph
 from .atom import Atom
 import numpy as np
 from typing import List
+from freud import cluster
 
 
 class Atoms(Graph):
     def __init__(self, name=None):
         super().__init__(name)
         
-    @classmethod
-    def fromDict(cls, nodes, edges, globals, topo, name=None):
-        atoms = cls()
+    @staticmethod
+    def fromDict(nodes, edges, globals, topo, name=None):
+        atoms = Atoms(name)
         atoms.nodes = nodes
         atoms.edges = edges
         atoms.globals = globals
         atoms.topo.setTopo(topo)
         return atoms
+    
+    @classmethod
+    def fromAtoms(cls, atoms):
+        ins = cls.fromCopy(atoms)
+        return ins
 
     def __iter__(self):
         return iter(self.atoms)
@@ -31,6 +37,17 @@ class Atoms(Graph):
     @property
     def atoms(self):
         return self.getAtoms()
+    
+    def getPositions(self, *fields):
+        
+        if 'positions' in self.nodes:
+            return self['positions']
+        
+        elif 'x' in self.nodes:
+            return np.array([self['x'], self['y'], self['z']]).T
+        
+        elif fields:
+            return np.array([self[field] for field in fields]).T
 
     def getAtoms(self):
         atomList = []
@@ -119,8 +136,48 @@ class Atoms(Graph):
     
     def append(self, atoms):
         pass
+    
+    def splitToCluster(self, box, settings:dict):
+        
+        if box is None:
+            raise ValueError('box is required for cluster method')
+        
+        clusterKernel = cluster.Cluster()
+        positions = self.getPositions()
+        clusterKernel.compute((box, positions), neighbors=settings)
+        
+        atoms_list = self.split(clusterKernel.cluster_keys)
+        
+        
+        return atoms_list
+    
+    def split(self, keys:List[List]):
+        
+        atoms_list = []
+        for key in keys:
             
-               
+            # nodes
+            nodes = {field: value[key] for field, value in self.nodes.items()}
+            
+            # edges is not supported yet
+            atoms_list.append(Atoms.fromDict(nodes, None, None, None, f'atoms with keys {keys}'))
+            
+        return atoms_list
+        
+        
+            
+class Cluster(Atoms):
+    
+    def __init__(self, name=None):
+        super().__init__(name)
+        self.clusterPropertiesKernel = cluster.ClusterProperties()
+        self.clusterPropertiesKernel.compute()
+    
+    def splitToCluster(self, box, settings: dict):
+        atoms_list = super().splitToCluster(box, settings)
+        return list(map(Cluster.fromAtoms, atoms_list))
+    
+        
 
 class AtomVec:
     

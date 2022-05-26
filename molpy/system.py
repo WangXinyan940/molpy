@@ -13,6 +13,8 @@ from molpy.pair import Pair
 from molpy.box import Box
 from typing import List
 
+from molpy.utils import fromDictToStruct, fromStructToDict
+
 
 class System:
     def __init__(self, comment=""):
@@ -134,14 +136,8 @@ class System:
 
         data_reader = DataReader(dataFile, atom_style=atom_style)
         atoms = data_reader.getAtoms()
-        self.atomVec.atoms = atoms
+        self.atomVec.atoms.replace(atoms)
         return atoms
-
-    def loadAtoms(self, atomData, bondData):
-        atoms = Atoms(fields=atomData)
-        atoms.fromStructuredArray(atomData)
-        atoms.setTopo(bondData)
-        self.atomVec.atoms = atoms
 
     def loadTraj(self, dumpFile):
 
@@ -155,8 +151,7 @@ class System:
         frame = self._traj.getFrame(nFrame)
         atoms = frame['Atoms']
         
-        for k in atoms.dtype.names:
-            self.atomVec.atoms.nodes[k] = atoms[k]
+        self.atomVec.atoms.replaceNodes(**fromStructToDict(atoms))
         
         box = frame['box']
         self._box = Box(box[1] - box[0], box[3] - box[2], box[5] - box[4])
