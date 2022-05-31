@@ -64,9 +64,6 @@ class Atoms(Graph):
         fields = {key: value[idx] for key, value in self.nodes.items()}
         return Atom.fromAtom(fields)
 
-    def setTopo(self, connection):
-        self.topo.setTopo(connection)
-
     def getBonds(self) -> List[Bond]:
         bondIdx = self.topo.bonds
         if bondIdx is None:
@@ -135,35 +132,7 @@ class Atoms(Graph):
         return self.topo.dihedrals     
     
     def append(self, atoms):
-        pass
-    
-    def splitToCluster(self, box, settings:dict):
-        
-        if box is None:
-            raise ValueError('box is required for cluster method')
-        
-        clusterKernel = cluster.Cluster()
-        positions = self.getPositions()
-        clusterKernel.compute((box, positions), neighbors=settings)
-        
-        atoms_list = self.split(clusterKernel.cluster_keys)
-        
-        
-        return atoms_list
-    
-    def split(self, keys:List[List]):
-        
-        atoms_list = []
-        for key in keys:
-            
-            # nodes
-            nodes = {field: value[key] for field, value in self.nodes.items()}
-            
-            # edges is not supported yet
-            atoms_list.append(Atoms.fromDict(nodes, None, None, None, f'atoms with keys {keys}'))
-            
-        return atoms_list
-        
+        pass      
         
             
 class Cluster(Atoms):

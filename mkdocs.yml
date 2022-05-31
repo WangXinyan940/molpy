@@ -1,0 +1,8 @@
+site_name: molpy
+
+nav:
+  - Home: index.md
+  - Tutorial: tutorial.md
+  - User Guide: guide.md
+  - Dev Guide: dev.md
+  - About: about.md

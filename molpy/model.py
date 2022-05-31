@@ -36,6 +36,10 @@ class Graph:
     def __getitem__(self, key):
         
         if isinstance(key, str):
+            if key == 'adjList':
+                return self.topo.adjList
+            elif key == 'adjDict':
+                return self.topo.adjDict
             return self.nodes[key]
         else:
             return self.getSubGraph(key)
@@ -45,10 +49,9 @@ class Graph:
         ins = Graph(self.name)
         ins.topo = self.topo.getSubTopo(index)
         ins.nodes = {k: v[index] for k, v in self.nodes.items()}
-        ins.edges = {k: v[index] for k, v in self.edges.items()}
-        ins.globals = {k: v[index] for k, v in self.globals.items()}
+        # ins.edges = {k: v[index] for k, v in self.edges.items()}
+        # ins.globals = {k: v[index] for k, v in self.globals.items()}
         return ins
-        
     
     def __setitem__(self, key, value):
         
@@ -97,3 +100,6 @@ class Graph:
         self.replaceEdges(**graph.edges)
         self.replaceGlobals(**graph.globals)
         self.topo = graph.topo
+        
+    def setTopo(self, connection):
+        self.topo.setTopo(connection)

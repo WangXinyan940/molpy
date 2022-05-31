@@ -98,20 +98,20 @@ class Topo:
         Get sub topology among index. For example, there is a topology like {1:{0,2}}, and we want to get the sub topology of [0, 1], then we can use getSubTopo([0, 1])
         
         Args:
-            index (slice): vertices in the sub topology
+            index (slice|list|np.array): vertices in the sub topology
 
         Returns:
             Topo: sub topo
         """
         adjDict = self._adjDict
-        subtopo = {}
-        for i, pairs in adjDict.items():
-            if j not in index:
-                continue
-            subtopo[i] = []
-            for j in pairs:
-                if j in index:
+        subtopo = defaultdict(list)
+        
+        nodei = np.sort(np.array(list(adjDict.keys())))[index]
+        for i in nodei:
+            for j in adjDict[i]:
+                if j in nodei and j > i:
                     subtopo[i].append(j)
+        
         return Topo(subtopo)
 
     @staticmethod
