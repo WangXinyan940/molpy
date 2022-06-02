@@ -47,7 +47,7 @@ class Graph:
     def getSubGraph(self, index):
             
         ins = Graph(self.name)
-        ins.topo = self.topo.getSubTopo(index)
+        ins.topo = self.topo.getSubTopo(self.nnodes, index)
         ins.nodes = {k: v[index] for k, v in self.nodes.items()}
         # ins.edges = {k: v[index] for k, v in self.edges.items()}
         # ins.globals = {k: v[index] for k, v in self.globals.items()}

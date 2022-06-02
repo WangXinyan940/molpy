@@ -19,28 +19,28 @@ class TestTopo:
         return topo
     
     def test_getsub_linear(self, linear):
-        sub = linear.getSubTopo([0,1,2])
+        sub = linear.getSubTopo(6, [0,1,2])
         assert sub.adjList == [[0,1], [1,2]]
         assert sub.adjDict == {0: [1], 1: [2]}
         
-        sub = linear.getSubTopo(slice(0, 4))
+        sub = linear.getSubTopo(6, slice(0, 4))
         assert sub.adjList == [[0,1], [1,2], [2,3]]
         assert sub.adjDict == {0: [1], 1: [2], 2: [3]}
         
-        sub = linear.getSubTopo([True, True, True, True, False, False])
+        sub = linear.getSubTopo(6, [True, True, True, True, False, False])
         assert sub.adjList == [[0,1], [1,2], [2,3]]
         assert sub.adjDict == {0: [1], 1: [2], 2: [3]}
                 
         
     def test_getsub_cyclic(self, cyclic):
-        sub = cyclic.getSubTopo([0,1,2])
+        sub = cyclic.getSubTopo(6, [0,1,2])
         assert sub.adjList == [[0,1], [1,2]]
         assert sub.adjDict == {0: [1], 1: [2]}
         
-        sub = cyclic.getSubTopo(slice(0, 4))
+        sub = cyclic.getSubTopo(6, slice(0, 4))
         assert sub.adjList == [[0,1], [1,2], [2,3]]
         assert sub.adjDict == {0: [1], 1: [2], 2: [3]}
         
-        sub = cyclic.getSubTopo([True, True, True, True, False, False])
+        sub = cyclic.getSubTopo(6, [True, True, True, True, False, False])
         assert sub.adjList == [[0,1], [1,2], [2,3]]
         assert sub.adjDict == {0: [1], 1: [2], 2: [3]}        

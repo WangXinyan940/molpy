@@ -93,7 +93,7 @@ class Topo:
             self._adjList = adjList
             self._adjMatrix = adjMatrix
             
-    def getSubTopo(self, index):
+    def getSubTopo(self, natoms, index):
         """
         Get sub topology among index. For example, there is a topology like {1:{0,2}}, and we want to get the sub topology of [0, 1], then we can use getSubTopo([0, 1])
         
@@ -106,9 +106,9 @@ class Topo:
         adjDict = self._adjDict
         subtopo = defaultdict(list)
         
-        nodei = np.sort(np.array(list(adjDict.keys())))[index]
+        nodei = np.arange(natoms)[index]
         for i in nodei:
-            for j in adjDict[i]:
+            for j in adjDict.get(i, []):
                 if j in nodei and j > i:
                     subtopo[i].append(j)
         
