@@ -1,6 +1,8 @@
 site_name: molpy
 nav:
   - Home: index.md
+  - Reference:
+    - Topo: reference/topo.md
   - About: about.md
 
 theme: material
