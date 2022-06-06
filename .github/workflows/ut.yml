@@ -1,0 +1,28 @@
+name: Unit Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  test-python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python: 3.9
+            gcc: 4.8
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: |
+          source $CONDA/bin/activate
+          conda create -n molpy_test python=${{ matrix.python }}
+          conda install --file requirements.txt -c conda-forge
+          conda install pytest                  -c conda-forge
+      - name: Run Tests
+        run: |
+          source $CONDA/bin/activate
+          pytest

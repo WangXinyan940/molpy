@@ -1,0 +1,27 @@
+name: Typing check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  typing-ckeck:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python: 3.9
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Dependencies
+        run: |
+          source $CONDA/bin/activate
+          conda create -n molpy_test python=${{ matrix.python }}
+          conda install --file requirements.txt -c conda-forge
+          conda install mypy                    -c conda-forge
+      - name: Run mypy
+        run: |
+          source $CONDA/bin/activate
+          mypy src/molpy

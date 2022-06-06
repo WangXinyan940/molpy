@@ -1,0 +1,27 @@
+name: Pylint check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+
+  pylint-ckeck:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python: 3.9
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Dependencies
+        run: |
+          source $CONDA/bin/activate
+          conda create -n molpy_test python=${{ matrix.python }}
+          conda install --file requirements.txt -c conda-forge
+          conda install pytest pylint           -c conda-forge
+      - name: Run Pylint
+        run: |
+          source $CONDA/bin/activate
+          pylint src/molpy --rcfile=.pylintrc
