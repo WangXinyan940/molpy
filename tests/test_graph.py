@@ -12,8 +12,8 @@ class TestNonTopoGraph:
     
     @pytest.fixture(scope='class', name='g')
     def init_non_topo_graph(self):
-        n_nodes = 10
-        graph = Graph(n_nodes, withTopo=False)
+        
+        graph = Graph(withTopo=False)
         graph.set_node_value('A', np.arange(10))
         graph.set_node_value('B', np.arange(10)+1)
         
@@ -41,5 +41,13 @@ class TestNonTopoGraph:
         
         npt.assert_equal(subg.get_node_value('A'), np.arange(10)[mask])
         
+    def test_get_subgraph(self, g):
         
+        og = Graph(withTopo=False)
+        og.set_node_value('A', np.arange(10)+10)
+        og.set_node_value('B', np.arange(10)+11)
+        
+        og.append(g)
+        assert og.n_nodes == 20
+
         

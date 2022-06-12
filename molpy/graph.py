@@ -16,6 +16,7 @@ class Graph:
         self._n_nodes = 0
         self._topo: Optional[Topo] = Topo() if withTopo else None
         self._nodes: Dict[str, npt.NDArray] = {}  # 
+        self.withTopo = withTopo
         
     def set_node_value(self, key:str, value:npt.ArrayLike):
         
@@ -64,5 +65,13 @@ class Graph:
             return f'<Graph: {self._n_nodes} nodes>'
         else:
             return f'<Graph: {self._n_nodes} nodes, {self._topo.n_edges} edges>'
+        
+    def append(self, graph: 'Graph'):
+        
+        for node in graph._nodes:
+            self.set_node_value(node, np.concatenate((self._nodes[node], graph._nodes[node])))
+        
+        if graph.withTopo:
+            self.topo.append(graph._topo)
         
     

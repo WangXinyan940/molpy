@@ -14,12 +14,15 @@ class Topo:
         
         self._edges:Dict[int, set(int)] = {}
         
-    def set_topo_by_adjList(self, adjList:List[List[int]]):
+    def set_topo_by_adjList(self, adjList:List[List[int]], offset:int=0):
         
         for edge in adjList:
-            self.add_edge(edge[0], edge[1])
+            self.add_edge(edge[0], edge[1], offset)
             
-    def add_edge(self, i:int, j:int):
+    def add_edge(self, i:int, j:int, offset:int=0):
+        
+        i += offset
+        j += offset
         
         if i not in self._edges:
             self._edges[i] = set()
@@ -28,11 +31,11 @@ class Topo:
         self._edges[i].add(j)
         self._edges[j].add(i)
         
-    def set_topo_by_adjDict(self, adjDict:Dict[int, List[int]]):
+    def set_topo_by_adjDict(self, adjDict:Dict[int, List[int]], offset:int=0):
         
         for i, js in adjDict.items():
             for j in js:
-                self.add_edge(i, j)
+                self.add_edge(i, j, offset)
                 
     def get_two_bodies(self)->npt.NDArray[np.int_]:
         
@@ -100,3 +103,11 @@ class Topo:
     @property
     def n_four_bodies(self)->int:
         return len(self.get_four_bodies())
+    
+    def append(self, topo:'Topo'):
+        offset = len(self._edges)
+        for i, js in topo._edges.items():
+            for j in js:
+                self.add_edge(i, j, offset)
+    
+    

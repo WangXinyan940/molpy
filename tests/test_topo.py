@@ -20,6 +20,10 @@ class TestTopo:
         topo.add_edge(0, 2)
         assert topo._edges[0] == {1, 2}
         
+        offset = 3
+        topo.add_edge(0, 1, offset)
+        assert topo._edges[3] == {4}
+        assert topo._edges[4] == {3}
     
     def test_init_via_adjList(self):
 
@@ -113,3 +117,28 @@ class TestTopo:
         assert len(four) == 7
         four = cyclic.get_four_bodies()
         assert len(four) == 10
+
+    def test_append(self):
+        
+        adjList = [
+            [0, 1],
+            [1, 2],
+            [2, 3],
+        ]
+        
+        topo = Topo()
+        topo.set_topo_by_adjList(adjList)
+        
+        adjList = [
+            [0, 1],  # [4, 5]
+            [1, 2],  # [5, 6]
+            [2, 3],  # [6, 7]
+        ]
+        topo1 = Topo()
+        topo1.set_topo_by_adjList(adjList)
+        
+        topo.append(topo1)
+        topo.add_edge(3, 4)  # [3, 4]
+        assert topo.n_edges == 7
+        assert topo._edges[3] == {2, 4}
+        assert topo._edges[7] == {6}
