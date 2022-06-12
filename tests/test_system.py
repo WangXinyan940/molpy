@@ -1,0 +1,22 @@
+# author: Roy Kid
+# contact: lijichen365@126.com
+# date: 2022-06-12
+# version: 0.0.1
+
+import pytest
+from molpy.system import System
+import numpy as np
+import numpy.testing as npt
+
+class TestSystem:
+    
+    def test_lammps_io(self):
+        
+        system = System('test_lammps_io')
+        system.load_data('tests/test_io/data/lammps.data', 'lammps')
+        
+        assert system.atoms.n_atoms == 7
+        npt.assert_equal(system.atoms['type'], np.array([1,1,3,3,4,4,4]))
+        # npt.assert_equal(system.atoms['mass'], np.array([1.0]*system.atoms.n_atoms))
+        npt.assert_equal(system.atoms['q'], np.array([-11.8]*system.atoms.n_atoms))
+    

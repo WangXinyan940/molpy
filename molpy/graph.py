@@ -42,6 +42,10 @@ class Graph:
         
         return self.get_subgraph(o)
     
+    def __setitem__(self, key, value):
+        
+        self.set_node_value(key, value)
+    
     @classmethod
     def from_graph(cls, graph: 'Graph') -> 'Graph':
         

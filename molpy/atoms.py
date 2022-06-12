@@ -8,6 +8,26 @@ from molpy.graph import Graph
 
 class Atoms(Graph):
     
+    def __init__(self, withTopo=False):
+        
+        super().__init__(withTopo)
+    
+    def set_atom_values(self, key, value):
+        
+        self.set_node_value(key, value)
+        
+    @property
+    def n_atoms(self):
+        return self._n_nodes
+
+    
+class AtomVec(Atoms):
+    
     def __init__(self, ):
         
-        pass
+        super().__init__()
+        
+        self.molecules = []
+        
+    
+        
