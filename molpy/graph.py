@@ -18,10 +18,14 @@ class Graph:
         self._nodes: Dict[str, npt.NDArray] = {}  # 
         self.withTopo = withTopo
         
-    def set_node_value(self, key:str, value:npt.ArrayLike):
+    def set_node_value(self, key:str, value:npt.ArrayLike, ref:npt.ArrayLike=None):
         
         v = np.array(value)
-        self._n_nodes = max(self._n_nodes, len(v))
+
+        if ref is not None:
+            args = np.argsort(ref)
+            v = v[args]
+
         self._nodes[key] = v
         
     def get_node_value(self, key:str)->npt.NDArray:
@@ -49,13 +53,17 @@ class Graph:
     @classmethod
     def from_graph(cls, graph: 'Graph') -> 'Graph':
         
-        ins = cls(graph._n_nodes)
+        ins = cls()
         ins._nodes = graph._nodes
         return ins
     
     @property
     def n_nodes(self):
-        return self._n_nodes
+        
+        n = 0
+        for value in self._nodes.values():
+            n = max(n, len(value))
+        return n
     
     @property
     def n_edges(self):

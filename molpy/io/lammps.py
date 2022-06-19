@@ -14,8 +14,6 @@ import numpy as np
 from molpy.atoms import Atoms
 from molpy.io.fileHandler import FileHandler
 from molpy.io.base import TrajReader, DataReader
-from molpy import Atoms
-import re
 
 TYPES = {
     
@@ -104,19 +102,36 @@ style_dtypes = {
 }
 
 
+class LAMMPS:
+
+    def get_atoms(self, data):
+
+        pass
+
+
 class TrajReader(TrajReader):
     
     def __init__(self, fpath:str):
         
         self.filepath = fpath
         self.filehandler = FileHandler(fpath)
-        self.chunks = self.filehandler.readchunks('ITEM: TIMESTEP')
+        self.chunks = self._get_outline('ITEM: TIMESTEP')
+
+    def _get_outline(self):
+        chunks = self.filehandler.readchunks('ITEM: TIMESTEP')
+        return chunks
         
     def get_frame(self, index):
         
         chunk = self.chunks.getchunk(index)
         
         return TrajReader.parse(chunk)
+
+    def get_atoms(self, index):
+        
+        data = TrajReader.parse(self.get_frame(index))
+
+
     
     @property
     def nFrames(self):
@@ -149,8 +164,6 @@ class TrajReader(TrajReader):
         return data
        
 
-
-           
 class DataReader(DataReader):
     
     def __init__(self, fpath:str, atom_style:str='full'):
@@ -267,7 +280,6 @@ class DataReader(DataReader):
             data['dihedrals']['id'] = dihedralInfo['id']
             data['dihedrals']['type'] = dihedralInfo['type']
             data['connect'] = dihedralInfo[['itom', 'jtom', 'ktom', 'ltom']]
-        
         
         return data
         

@@ -50,4 +50,13 @@ class TestNonTopoGraph:
         og.append(g)
         assert og.n_nodes == 20
 
+    def test_set_value(self):
+
+        graph = Graph()
+        ids = np.array([1,4,2,3,5])
+        value = np.array([1,4,2,3,5])
+        graph.set_node_value('value', value, ids)
+
+        npt.assert_equal(graph['value'], np.arange(5)+1)
+        
         

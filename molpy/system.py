@@ -7,7 +7,6 @@ from molpy.box import Box
 from molpy.atoms import AtomVec
 import numpy as np
 from molpy.io import Readers
-from molpy.utils import data2atoms
 
 class System:
     
@@ -30,14 +29,19 @@ class System:
         
         self._box = Box(Lx, Ly, Lz, xy, xz, yx, is2D)
     
-    def load_data(self, dataFile:str, format):
+    def load_data(self, dataFile:str, format, method='replace'):
+        """ load data from a file.
+            Args:
+                dataFile[str]: path of data file
+                format[str]: format of data
+                method[str]: how to load data. `replace` means total erease previous data and replace with data file; `update` is to add data to the exist data
         
+        """
         data_reader = Readers['DataReaders'][format](dataFile)
-        data = data_reader.get_data()
-        atoms = data2atoms(data)
+        atoms = data_reader.get_atoms()
         self._atomVec = atoms
         
-    def load_traj(self, trajFile:str, format):
+    def load_traj(self, trajFile:str, format, method='replace'):
         
         self._traj = Readers['TrajReaders'][format](trajFile)
         self._nFrames = self._traj.nFrames

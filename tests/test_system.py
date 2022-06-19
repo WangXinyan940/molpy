@@ -19,4 +19,14 @@ class TestSystem:
         npt.assert_equal(system.atoms['type'], np.array([1,1,3,3,4,4,4]))
         # npt.assert_equal(system.atoms['mass'], np.array([1.0]*system.atoms.n_atoms))
         npt.assert_equal(system.atoms['q'], np.array([-11.8]*system.atoms.n_atoms))
+
+        system.load_traj('tests/test_io/data/lammps.dump', 'lammps')
+
+        system.select_frame(0)
+        npt.assert_equal(system.atoms['type'], np.array([1,1,3,3,4,4,4]))
+
+        system.select_frame(1)
+        npt.assert_equal(system.atoms['type'], np.array([1,1,3,3,4,4,4]))
+        npt.assert_equal(system.atoms['q'], np.array([11.8]*7))
+
     

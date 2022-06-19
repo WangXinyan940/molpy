@@ -4,7 +4,7 @@
 # version: 0.0.1
 
 from molpy.graph import Graph
-
+import numpy.typing as npt
 
 class Atoms(Graph):
     
@@ -12,9 +12,9 @@ class Atoms(Graph):
         
         super().__init__(withTopo)
     
-    def set_atom_values(self, key, value):
+    def set_atom_values(self, key:str, value:npt.ArrayLike, ref:npt.ArrayLike):
         
-        self.set_node_value(key, value)
+        self.set_node_value(key, value, ref)
         
     @property
     def n_atoms(self):

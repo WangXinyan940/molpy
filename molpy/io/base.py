@@ -3,7 +3,8 @@
 # date: 2022-06-12
 # version: 0.0.1
 
-import molpy.io.lammps as lammps
+from typing import Dict
+from molpy.atoms import Atoms
 
 class TrajReader:
     
@@ -44,5 +45,15 @@ class DataReader:
             NotImplementedError: if not implemented in the derived class
         """
         raise NotImplementedError()
+
+
+def data2atoms(name:str, data:Dict, withTopo:bool=False, out:Atoms=None):
+    
+    if out is None:
+        out = Atoms(withTopo=False)
+        for key, value in data['atoms'].items():
+            out.set_atom_values(key, value)
+        
+    return out
     
     
