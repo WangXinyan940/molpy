@@ -20,7 +20,7 @@ class TestLammps:
 
     def test_read_dump(self):
 
-        reader = Readers['DumpReaders']['lammps']('tests/test_io/data/lammps.dump')
+        reader = Readers['TrajReaders']['lammps']('tests/test_io/data/lammps.dump')
         assert reader.nFrames == 3
         data = reader.get_frame(0)
         assert data

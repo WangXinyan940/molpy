@@ -14,14 +14,14 @@ class TestNonTopoGraph:
     def init_non_topo_graph(self):
         
         graph = Graph(withTopo=False)
-        graph.set_node_value('A', np.arange(10))
-        graph.set_node_value('B', np.arange(10)+1)
+        graph.set_node('A', np.arange(10))
+        graph.set_node('B', np.arange(10)+1)
         
         yield graph
         
-    def test_get_node_value(self, g):
+    def test_get_node(self, g):
         
-        npt.assert_equal(g.get_node_value('A'), np.arange(10))
+        npt.assert_equal(g.get_node('A'), np.arange(10))
         npt.assert_equal(g['B'], np.arange(10)+1)
         
     def test_slice(self, g):
@@ -30,22 +30,22 @@ class TestNonTopoGraph:
         subg2 = g[::3]
         subg3 = g[2]
         
-        npt.assert_equal(subg1.get_node_value('A'), np.arange(5))
-        npt.assert_equal(subg2.get_node_value('A'), np.arange(10)[::3])
-        npt.assert_equal(subg3.get_node_value('A'), np.arange(10)[2])
+        npt.assert_equal(subg1.get_node('A'), np.arange(5))
+        npt.assert_equal(subg2.get_node('A'), np.arange(10)[::3])
+        npt.assert_equal(subg3.get_node('A'), np.arange(10)[2])
         
     def test_mask(self, g):
         
         mask = np.array([True, False, True, False, True, False, True, False, True, False])
         subg = g[mask]
         
-        npt.assert_equal(subg.get_node_value('A'), np.arange(10)[mask])
+        npt.assert_equal(subg.get_node('A'), np.arange(10)[mask])
         
     def test_get_subgraph(self, g):
         
         og = Graph(withTopo=False)
-        og.set_node_value('A', np.arange(10)+10)
-        og.set_node_value('B', np.arange(10)+11)
+        og.set_node('A', np.arange(10)+10)
+        og.set_node('B', np.arange(10)+11)
         
         og.append(g)
         assert og.n_nodes == 20
@@ -55,7 +55,7 @@ class TestNonTopoGraph:
         graph = Graph()
         ids = np.array([1,4,2,3,5])
         value = np.array([1,4,2,3,5])
-        graph.set_node_value('value', value, ids)
+        graph.set_node('value', value, ids)
 
         npt.assert_equal(graph['value'], np.arange(5)+1)
         

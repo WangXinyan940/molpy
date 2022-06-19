@@ -26,7 +26,14 @@ class TestSystem:
         npt.assert_equal(system.atoms['type'], np.array([1,1,3,3,4,4,4]))
 
         system.select_frame(1)
-        npt.assert_equal(system.atoms['type'], np.array([1,1,3,3,4,4,4]))
+        npt.assert_equal(system.atoms['type'], np.array([1,3,1,3,4,4,4]))
         npt.assert_equal(system.atoms['q'], np.array([11.8]*7))
 
+        ids = iter([0,1,2])
+        types = iter(np.array([[1,1,3,3,4,4,4], [1,3,1,3,4,4,4], [4,1,4,1,3,3,4]]))
+        for i in system.sample(0, -1, 1):
+            j = next(ids)
+            type = next(types)
+            assert i == j
+            npt.assert_equal(system.atoms['type'], type)
     

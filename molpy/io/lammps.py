@@ -9,11 +9,12 @@ __all__ = [
     'DumpReader'
 ]
 
-from typing import List
+from typing import Dict, List
 import numpy as np
 from molpy.atoms import Atoms
 from molpy.io.fileHandler import FileHandler
 from molpy.io.base import TrajReader, DataReader
+from functools import cache
 
 TYPES = {
     
@@ -102,11 +103,17 @@ style_dtypes = {
 }
 
 
-class LAMMPS:
+def data2atoms(data:Dict, out=None):
 
-    def get_atoms(self, data):
+    if out is None:
 
-        pass
+        out = Atoms()
+        atomData = data['atoms']
+        for key, value in atomData.items():
+            out.set_atom(key, value)
+
+
+    return out
 
 
 class TrajReader(TrajReader):
@@ -115,22 +122,40 @@ class TrajReader(TrajReader):
         
         self.filepath = fpath
         self.filehandler = FileHandler(fpath)
-        self.chunks = self._get_outline('ITEM: TIMESTEP')
+        self.chunks = self.get_chunks('ITEM: TIMESTEP')
+        self.current_nframe = 0
+        self.current_frame = None
 
-    def _get_outline(self):
-        chunks = self.filehandler.readchunks('ITEM: TIMESTEP')
+    def get_chunks(self, seperator:str):
+        chunks = self.filehandler.readchunks(seperator)
         return chunks
         
     def get_frame(self, index):
         
+        self.current_nframe = index
+
         chunk = self.chunks.getchunk(index)
         
-        return TrajReader.parse(chunk)
+        self.current_frame = TrajReader.parse(chunk)
+        return self.current_frame
 
-    def get_atoms(self, index):
-        
-        data = TrajReader.parse(self.get_frame(index))
+    def get_atoms(self):
+    
+        return data2atoms(self.current_frame)
 
+    def get_box(self):
+
+        box = self.current_frame['box']
+
+        return {
+            'Lx': box['xlo'] - box['xhi'],
+            'Ly': box['ylo'] - box['yhi'],
+            'Lz': box['zlo'] - box['zhi'],
+            'xy': box.get('xy', 0),
+            'xz': box.get('xz', 0),
+            'yz': box.get('yz', 0),
+            'is2D': False
+        }
 
     
     @property
@@ -138,7 +163,7 @@ class TrajReader(TrajReader):
         return self.chunks.nchunks
         
     @staticmethod
-    def parse(lines:List[str], style:str='full'):
+    def parse(lines:List[str]):
         
         data = {}
         
@@ -148,9 +173,12 @@ class TrajReader(TrajReader):
         ylo, yhi = [float(x) for x in lines[6].split()]
         zlo, zhi = [float(x) for x in lines[7].split()]
         data['box'] = {
-            'Lx': xhi - xlo,
-            'Ly': yhi - ylo,
-            'Lz': zhi - zlo,
+            'xlo': xlo,
+            'xhi': xhi,
+            'ylo': ylo,
+            'yhi': yhi,
+            'zlo': zlo,
+            'zhi': zhi,
         }
         
         header = lines[8].split()[2:]
@@ -180,6 +208,9 @@ class DataReader(DataReader):
         lines = list(filter(lambda line: line != (), lines))
         data.update(DataReader.parse(lines, self.atom_style))
         return data
+
+    def get_atoms(self):
+        return data2atoms(self.get_data())
         
     @staticmethod
     def parse_line(line:str):
@@ -220,9 +251,12 @@ class DataReader(DataReader):
             # elif line[-1] == 
         
         data['box'] = {
-            'Lx': xhi - xlo,
-            'Ly': yhi - ylo,
-            'Lz': zhi - zlo,
+            'xhi': xhi,
+            'xlo': xlo,
+            'yhi': yhi,
+            'ylo': ylo,
+            'zhi': zhi,
+            'zlo': zlo,
             'xy': 0,
             'xz': 0,
             'yz': 0,
@@ -230,8 +264,8 @@ class DataReader(DataReader):
         }
         
         section_start_lineno = {}
-        sections_re = "(" + "|".join(sections).replace(" ", "\\s+") + ")"
-        header_fields_re = "(" + "|".join(header_fields).replace(" ", "\\s+") + ")"
+        # sections_re = "(" + "|".join(sections).replace(" ", "\\s+") + ")"
+        # header_fields_re = "(" + "|".join(header_fields).replace(" ", "\\s+") + ")"
         for lino, line in enumerate(lines):
 
             if line and line[0] in sections:

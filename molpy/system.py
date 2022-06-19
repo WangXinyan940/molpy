@@ -29,38 +29,47 @@ class System:
         
         self._box = Box(Lx, Ly, Lz, xy, xz, yx, is2D)
     
-    def load_data(self, dataFile:str, format, method='replace'):
-        """ load data from a file.
-            Args:
-                dataFile[str]: path of data file
-                format[str]: format of data
-                method[str]: how to load data. `replace` means total erease previous data and replace with data file; `update` is to add data to the exist data
-        
+    def load_data(self, dataFile:str, format:str, method='replace'):
+        """load data from file
+
+        Args:
+            dataFile (str): path of data file
+            format (str): format of data file
+            method (str, optional): how to load the data. Defaults to 'replace'.
         """
         data_reader = Readers['DataReaders'][format](dataFile)
-        atoms = data_reader.get_atoms()
-        self._atomVec = atoms
+
+        if method == 'replace':
+            atoms = data_reader.get_atoms()
+            self._atomVec.replace_nodes(atoms._nodes)
+        elif method == 'update':
+            atoms = data_reader.get_atoms(issort=True)
+            for key, value in atoms.node.items():
+                self._atomVec.set_node(key, value)
+        elif method == 'append':
+            pass
         
-    def load_traj(self, trajFile:str, format, method='replace'):
+    def load_traj(self, trajFile:str, format):
         
         self._traj = Readers['TrajReaders'][format](trajFile)
         self._nFrames = self._traj.nFrames
         return self._traj
     
-    def select_frame(self, nFrame:int):
+    def select_frame(self, nFrame:int, method='replace'):
         
         frame = self._traj.get_frame(nFrame)
-        atoms = frame.get_atoms()
-        # self.atomVec.replace_nodes(atoms.nodes)
+        atoms = self._traj.get_atoms()
+        if method == 'replace':
+            self._atomVec.replace_nodes(atoms._nodes)
         
-        box = frame.get_box()
+        box = self._traj.get_box()
         self.set_box(box['Lx'], box['Ly'], box['Lz'], box.get('xy', 0), box.get('xz', 0), box.get('yx', 0), box.get('is2D', False))
         
-    def sample(self, start, stop, interal):
+    def sample(self, start, stop, interal, method='replace')->int:
         
         frame = np.arange(self._nFrames)[start:stop:interal]
         for f in frame:
             self.select_frame(f)
-            yield self
+            yield f
         
     

@@ -12,13 +12,13 @@ class Atoms(Graph):
         
         super().__init__(withTopo)
     
-    def set_atom_values(self, key:str, value:npt.ArrayLike, ref:npt.ArrayLike):
+    def set_atom(self, key:str, value:npt.ArrayLike, ref:npt.ArrayLike=None):
         
-        self.set_node_value(key, value, ref)
+        self.set_node(key, value, ref)
         
     @property
     def n_atoms(self):
-        return self._n_nodes
+        return self.n_nodes
 
     
 class AtomVec(Atoms):

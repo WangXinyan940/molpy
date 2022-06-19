@@ -18,7 +18,7 @@ class Graph:
         self._nodes: Dict[str, npt.NDArray] = {}  # 
         self.withTopo = withTopo
         
-    def set_node_value(self, key:str, value:npt.ArrayLike, ref:npt.ArrayLike=None):
+    def set_node(self, key:str, value:npt.ArrayLike, ref:npt.ArrayLike=None):
         
         v = np.array(value)
 
@@ -28,7 +28,7 @@ class Graph:
 
         self._nodes[key] = v
         
-    def get_node_value(self, key:str)->npt.NDArray:
+    def get_node(self, key:str)->npt.NDArray:
         
         return self._nodes[key]
         
@@ -42,13 +42,13 @@ class Graph:
     def __getitem__(self, o: Union[str, slice, int, npt.NDArray]) -> Union['Graph', npt.NDArray]:
         
         if isinstance(o, str):
-            return self.get_node_value(o)
+            return self.get_node(o)
         
         return self.get_subgraph(o)
     
     def __setitem__(self, key, value):
         
-        self.set_node_value(key, value)
+        self.set_node(key, value)
     
     @classmethod
     def from_graph(cls, graph: 'Graph') -> 'Graph':
@@ -81,9 +81,12 @@ class Graph:
     def append(self, graph: 'Graph'):
         
         for node in graph._nodes:
-            self.set_node_value(node, np.concatenate((self._nodes[node], graph._nodes[node])))
+            self.set_node(node, np.concatenate((self._nodes[node], graph._nodes[node])))
         
         if graph.withTopo:
             self.topo.append(graph._topo)
         
-    
+    def replace_nodes(self, nodes: Dict[str, npt.ArrayLike]):
+
+        for key, value in nodes.items():
+            self.set_node(key, value)
