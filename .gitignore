@@ -639,5 +639,9 @@ FodyWeavers.xsd
 ### VisualStudio Patch ###
 # Additional files built by Visual Studio
 
+# extra files
+*.DS_Store
+examples/test/test*.xml
+
 
 # End of https://www.toptal.com/developers/gitignore/api/python,c,c++,visualstudiocode
