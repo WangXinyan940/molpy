@@ -9,43 +9,44 @@ from typing import List
 
 parsers = {}
 
+
 class SelectError(BaseException):
     pass
 
+
 class Node:
-    
     def __init__(self, tag, **attrs):
-        
+
         self.tag = tag
         #TODO: self.parent = parent
         self.attrs = attrs
         self.children = []
-        
-    def add_child(self, child:'Node'):
-        
+
+    def add_child(self, child: 'Node'):
+
         self.children.append(child)
-        
-    def add_children(self, children:List['Node']):
+
+    def add_children(self, children: List['Node']):
         self.children.extend(children)
-        
+
     def get_children(self, key):
         return [c for c in self.children if c.tag == key]
-    
+
     def get_child(self, key):
         for child in self.children:
             if child.tag == key:
                 return child
-    
+
     def __getitem__(self, key):
-        
+
         return self.attrs[key]
-    
+
     def __repr__(self):
         return f'<{self.tag}: {self.attrs}, with {len(self.children)} subnodes>'
-    
+
     def __iter__(self):
         return iter(self.children)
-    
+
     def __contains__(self, key):
         if self.get_child(key):
             return True
@@ -58,6 +59,35 @@ class ForcefieldTree(Node):
 
         super().__init__('ForcefieldTree')
 
+    def get_node(self, parser):
+        steps = parser.split("/")
+        val = self
+        for nstep, step in enumerate(steps):
+            name, index = step, -1
+            if "[" in step:
+                name, index = step.split("[")
+                index = int(index[:-1])
+            val = [c for c in val.children if c.tag == name]
+            if index >= 0:
+                val = val[index]
+            elif nstep < len(steps) - 1:
+                val = val[0]
+        return val
+
+    def get_attrib(self, parser, attrname):
+        sel = self.get_node(parser)
+        attrs = [float(n.attrs[attrname]) for n in sel]
+        return attrs
+
+    def set_node(self, parser, values):
+        nodes = self.get_node(parser)
+        for nit in range(len(values)):
+            for key in values[nit]:
+                nodes[nit].attrs[key] = f"{values[nit][key]}"
+
+    def set_attrib(self, parser, attrname, values):
+        valdicts = [{attrname: i} for i in values]
+        self.set_node(parser, valdicts)
 
 class XMLParser:
     def __init__(self, ffTree: ForcefieldTree):
@@ -114,8 +144,7 @@ class XMLParser:
                 for residue in child:
                     self.write_node(Residues, residue)
             else:
-                elem = ET.SubElement(root, child.tag)
-                self.write_node(elem, child)
+                self.write_node(root, child)
         outstr = self.pretty_print(root)
         with open(path, "w") as f:
             f.write(outstr)
